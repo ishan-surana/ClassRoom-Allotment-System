@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            background-color: transparent;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .header h1 {
+            text-align: center;
+            margin: 0;
+            padding: 20px 0;
+        }
+
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .logout-button button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #dc3545;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .logout-button button:hover {
+            background-color: #c82333;
+        }
+
+        .content {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f2f2f2;
+        }
+
+        .dashboard-container {
+            display: flex;
+            width: 95%;
+            margin: auto;
+            overflow: hidden;
+            background-color: transparent;
+        }
+
+        .left-panel {
+            flex: 1;
+            padding: 20px;
+            border-radius: 20px;
+            border-right: 3px solid #ccc;
+            overflow: hidden;
+            background-color: #fff;
+            margin: 10px;
+        }
+
+        .right-panel {
+            flex: 1;
+            padding: 20px;
+            border-radius: 20px;
+            border-right: 3px solid #ccc;
+            overflow: hidden;
+            background-color: #fff;
+            margin: 10px;
+        }
+
+        .request-item {
+            padding-top: 10px;
+            padding-right: 10px;
+            padding-left: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .request-item:hover {
+            border: 1px solid black;
+        }
+
+        .request-status-bar {
+            display: flex;
+            align-items: center;
+            height: 20px;
+            border: 1px solid #ccc;
+            margin-bottom: 5px;
+        }
+
+        .stage {
+            flex: 1;
+            height: 100%;
+            border-right: 1px solid white;
+        }
+
+        .stage.fa-approved {
+            background-color: lime;
+        }
+
+        .stage.sw-approved {
+            background-color: lime;
+        }
+
+        .stage.so-approved {
+            background-color: lime;
+        }
+
+        .stage.approved {
+            background-color: lime;
+        }
+
+        .stage.black {
+            background-color: black;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        .form-group textarea, input {
+            width: calc(100% - 22px);
+            font-size: medium;
+            padding: 2px;
+        }
+        
+        .time-input-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 20px;
+            margin-top: 30px;
+        }
+
+        .time-input-container label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+            margin-right: -10px;
+        }
+
+        .time-input {
+            width: calc(45% - 5px);
+            display: inline-block;
+            margin-right: 30px;
+        }
+
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 10px;
+        }
+
+        .room-square {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: inline-block; /* Add this line */
+        }
+
+        .room-square.selected {
+            background-color: #007bff;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .request-details {
+            display: none;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .modal {
+            display: none;
+            align-items: center; /* Vertically center */
+            justify-content: center;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 40%; /* Could be more or less, depending on screen size */
+            border-radius: 5px;
+        }
+
+        .existing-request {
+            background-color: #d3d3d3; /* Gray color */
+            pointer-events: none; /* Disable pointer events */
+        }
+
+        /* Ongoing slot style */
+        .ongoing-slot {
+            background-color: #ff6961; /* Red color */
+            pointer-events: none; /* Disable pointer events */
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Dashboard</h1>
+        <div class="logout-button">
+            <form action="/user/logout" method="GET">
+                <button type="submit">Logout</button>
+            </form>
+        </div>
+    </div>
+    <div class="content">
+        <div class="dashboard-container">
+            <div class="left-panel" id="left-panel">
+                <u><h1 style="text-align: center;">Requests status</u>:-</h1>
+                {% for row in data %}
+                    <div class="request-item" onclick="openModal('{{ row[0] }}')">
+                        <div class="request-status-bar">
+                            {% if row[-1] == 1 %}
+                                <!-- Request is ongoing, display three stages -->
+                                <div class="stage {% if row[-4] == 1 %} fa-approved {% else %} black {% endif %}"></div>
+                                <div class="stage {% if row[-3] == 1 %} sw-approved {% else %} black {% endif %}"></div>
+                                <div class="stage {% if row[-2] == 1 %} so-approved {% else %} black {% endif %}"></div>
+                            {% else %}
+                                <!-- Request is not ongoing, display single stage -->
+                                <div class="stage {% if row[-4] == 1 %} approved {% else %} black {% endif %}"></div>
+                            {% endif %}
+                        </div>
+                        <!-- Display other request details -->
+                        <p>Request id: {{ row[0] }}</p>
+                    </div>
+                    <div id="modal{{ row[0] }}" class="modal">
+                        <!-- Modal content -->
+                        <div class="modal-content">
+                            <!-- Populate this modal with request details -->
+                            <p><strong>Date:</strong> {{ row[1] }}</p>
+                            <p><strong>Start Time:</strong> {{ row[2] }}</p>
+                            <p><strong>End Time:</strong> {{ row[3] }}</p>
+                            <p><strong>Room Block:</strong> {{ row[4] }}</p>
+                            <p><strong>Room Number:</strong> {{ row[5] }}</p>
+                            <p><strong>Reason:</strong> {{ row[7] }}</p>
+                            <p><strong>Type of Event:</strong> {{ row[8] }}</p>
+                            <p><strong>Remarks:</strong> {{ row[9] }}</p>
+                            <button onclick="closeModal('{{ row[0] }}')">Close</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="right-panel">
+                <form action="/user/submit_request" method="POST">
+                    <div class="form-group">
+                        <label for="date">Date</label>
+                        <input type="date" id="date" name="date" value="YYYY-MM-DD" required>
+                    </div>
+                    <div class="time-input-container">
+                        <label for="start_time">Start Time</label>
+                        <input type="time" id="start_time" name="start_time" class="time-input" required>
+                        <label for="end_time">End Time</label>
+                        <input type="time" id="end_time" name="end_time" class="time-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="block">Block</label>
+                        <select id="block" name="block" required>
+                            <option value="" selected disabled>(not selected)</option>
+                            <option value="AB1">AB1</option>
+                            <option value="AB2">AB2</option>
+                            <option value="AB3">AB3</option>
+                            <option value="AB4">AB4</option>
+                            <option value="AB5">AB5</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="room-matrix" style="display: none;">
+                        <label for="room">Room</label>
+                        <div class="room-grid" id="room-grid">
+                            <input type="hidden" id="selected_room" name="room" required>
+                            {% for row in range(5) %}
+                                {% for col in range(10) %}
+                                    <div class="room-square" id="room{{ row }}0{{ col }}" data-row="{{ row }}" data-col="{{ col }}"></div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="reason">Reason</label>
+                        <textarea id="reason" name="reason" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="type_of_event">Type of Event</label>
+                        <input type="text" id="type_of_event" name="type_of_event" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="remarks">Remarks</label>
+                        <textarea id="remarks" name="remarks" rows="4"></textarea>
+                    </div>
+                    <button type="submit" id="request">Submit Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function openModal(requestId) {
+            const modal = document.getElementById('modal' + requestId);
+            modal.style.display = 'flex'; // Change display property to flex
+            modal.style.alignItems = 'center'; // Vertically center
+            modal.style.justifyContent = 'center'; // Horizontally center
+        }
+
+        function closeModal(requestId) {
+            const modal = document.getElementById('modal' + requestId);
+            modal.style.display = 'none';
+        }
+
+        const blockDropdown = document.getElementById('block');
+        const roomContainer = document.getElementById('room-matrix');
+        const dateValue = document.getElementById('date');
+        const startValue = document.getElementById('start_time');
+        const endValue = document.getElementById('end_time');
+
+        startValue.addEventListener('change', () => {
+            // Update start time value when changed
+            startValue.value = startValue.value;
+        });
+
+        endValue.addEventListener('change', () => {
+            // Update end time value when changed
+            endValue.value = endValue.value;
+        });
+
+        blockDropdown.addEventListener('change', async () => {
+            if (blockDropdown.value !== "") {
+                // Fetch existing requests for the selected block and date
+                let response = await fetch(`/get_existing_requests?block=${blockDropdown.value}&date=${dateValue.value}&start_time=${startValue.value}&end_time=${endValue.value}`);
+                let existingRequests = await response.json();
+
+                // Fetch ongoing event slots
+                response = await fetch(`/get_ongoing_slots?block=${blockDropdown.value}&date=${dateValue.value}&start_time=${startValue.value}&end_time=${endValue.value}`);
+                let ongoingSlots = await response.json();
+                // Display room grid
+                roomContainer.style.display = ''; // Change to empty string to reset to default display
+
+                // Colorize rooms based on existing requests and ongoing event slots
+                const roomSquares = document.querySelectorAll('.room-square');
+                roomSquares.forEach(square => {
+                    const row = square.dataset.row;
+                    const col = square.dataset.col;
+                    const roomNumber = `${row}0${col}`;
+
+                    // Check if room has an existing request
+                    if (existingRequests.includes(roomNumber)) {
+                        square.classList.add('existing-request');
+                    }
+
+                    // Check if room has an ongoing event slot
+                    if (ongoingSlots.includes(roomNumber)) {
+                        square.classList.add('ongoing-slot');
+                    }
+                });
+            } else {
+                roomContainer.style.display = 'none';
+            }
+        });
+
+        const roomSquares = document.querySelectorAll('.room-square');
+        roomSquares.forEach(square => {
+            square.addEventListener('click', () => {
+                roomSquares.forEach(square => {
+                    square.classList.remove('selected');
+                });
+                square.classList.add('selected');
+                const row = square.dataset.row;
+                const col = square.dataset.col;
+                document.getElementById('selected_room').value = `${row}0${col}`;
+            });
+        });
+
+        const selectedRoomInput = document.getElementById('selected_room');
+        document.addEventListener('DOMContentLoaded', function () {
+    const selectedRoomInput = document.getElementById('selected_room');
+    document.getElementById('request').addEventListener('click', function(event) {
+        const form = document.querySelector('form');
+        if (!selectedRoomInput.value) {
+            event.preventDefault(); // Prevent form submission if room is not selected
+            alert('Please select a room before submitting the form.');
+            console.log('testing');
+        } else {
+            form.submit(); // Submit the form if room is selected
+        }
+    });
+});
+    </script>
+</body>
+</html>

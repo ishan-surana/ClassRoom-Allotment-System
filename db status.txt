@@ -1,0 +1,26 @@
+PS D:\flask_app> sqlite3 .\classroom_allotment_system.db
+SQLite version 3.38.5 2022-05-06 15:25:27
+Enter ".help" for usage hints.
+sqlite> select * from clublogin;
+1|a|b
+2|c|d
+sqlite> select * from sologin;
+so_admin|so_admin
+sqlite> select * from swlogin;
+sw_admin|sw_admin
+sqlite> select * from requests;
+1||||AB3|105|1|||
+2||||AB4|104|2|||
+3|2009|17:58|18:58|AB2|||wdq|qwdqdqw|qwdqdcqwdqw
+4|2009|17:58|18:58|AB2|306||wdq|qwdqdqw|qwdqdcqwdqw
+5|1990|16:58|23:58|AB4|205|1|wdq|qwdqdqw|qwdqdcqwdqw
+sqlite> select * from status;
+1|1|1|0|1
+2|0|0|0|1
+3|0|0|0|1
+4|1|1|1|1
+5|1|0|0|1
+sqlite> select * from slots;
+5|1
+4|1
+sqlite>

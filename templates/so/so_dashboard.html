@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            background-color: transparent;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .header h1 {
+            text-align: center;
+            margin: 0;
+            padding: 20px 0;
+        }
+
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .logout-button button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #dc3545;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .logout-button button:hover {
+            background-color: #c82333;
+        }
+
+        .content {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f2f2f2;
+        }
+
+        .dashboard-container {
+            display: flex;
+            width: 95%;
+            margin: auto;
+            overflow: hidden;
+            background-color: transparent;
+        }
+
+        .panel {
+            flex: 1;
+            padding: 20px;
+            border-radius: 20px;
+            border-right: 3px solid #ccc;
+            overflow: hidden;
+            background-color: #fff;
+            margin: 10px;
+        }
+
+        .request-item {
+            padding-top: 10px;
+            padding-right: 10px;
+            padding-left: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .request-item:hover {
+            border: 1px solid black;
+        }
+
+        .request-status-bar {
+            display: flex;
+            align-items: center;
+            height: 20px;
+            border: 1px solid #ccc;
+            margin-bottom: 5px;
+        }
+
+        .stage {
+            flex: 1;
+            height: 100%;
+            border-right: 1px solid white;
+        }
+
+        .stage.fa-approved {
+            background-color: lime;
+        }
+
+        .stage.sw-approved {
+            background-color: lime;
+        }
+
+        .stage.so-approved {
+            background-color: lime;
+        }
+
+        .stage.approved {
+            background-color: lime;
+        }
+
+        .stage.black {
+            background-color: black;
+        }
+
+        .room-square.selected {
+            background-color: #007bff;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-left: 25%;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .request-details {
+            display: none;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .modal {
+            display: none;
+            align-items: center; /* Vertically center */
+            justify-content: center;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 40%; /* Could be more or less, depending on screen size */
+            border-radius: 5px;
+        }
+
+        #forward {
+            background-color: mediumspringgreen;
+            margin-right: 20%;
+        }
+
+        #forward:hover {
+            background-color: mediumseagreen;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Dashboard</h1>
+            <div class="logout-button">
+                <form action="/so/logout" method="GET">
+                    <button type="submit">Logout</button>
+                </form>
+            </div>
+    </div>    
+    <div class="content">
+    <div class="dashboard-container">
+        <div class="panel" id="panel">
+            <u><h1 style="text-align: center;">Requests status</u>:-</h1>
+            {% for row in data %}
+                <div class="request-item" onclick="openModal('{{ row[0] }}')">
+                    <div class="request-status-bar">
+                        {% if row[-1] == 1 %}
+                            <!-- Request is ongoing, display three stages -->
+                            <div class="stage {% if row[-4] == 1 %} fa-approved {% else %} black {% endif %}"></div>
+                            <div class="stage {% if row[-3] == 1 %} sw-approved {% else %} black {% endif %}"></div>
+                            <div class="stage {% if row[-2] == 1 %} so-approved {% else %} black {% endif %}"></div>
+                        {% else %}
+                            <!-- Request is not ongoing, display single stage -->
+                            <div class="stage {% if row[-4] == 1 %} approved {% else %} black {% endif %}"></div>
+                        {% endif %}
+                    </div>
+                    <!-- Display other request details -->
+                    <p>Request id: {{ row[0] }}</p>
+                </div>
+                <div id="modal{{ row[0] }}" class="modal">
+                    <!-- Modal content -->
+                    <div class="modal-content">
+                        <!-- Populate this modal with request details -->
+                        <p><strong>Date:</strong> {{ row[1] }}</p>
+                        <p><strong>Start Time:</strong> {{ row[2] }}</p>
+                        <p><strong>End Time:</strong> {{ row[3] }}</p>
+                        <p><strong>Room Block:</strong> {{ row[4] }}</p>
+                        <p><strong>Room Number:</strong> {{ row[5] }}</p>
+                        <p><strong>Reason:</strong> {{ row[7] }}</p>
+                        <p><strong>Type of Event:</strong> {{ row[8] }}</p>
+                        <p><strong>Remarks:</strong> {{ row[9] }}</p>
+                        <div style="display: flex; justify-content: center; margin-right: 50px;">
+                            <button onclick="closeModal('{{ row[0] }}')">Close</button>
+                            <button id="forward">Forward</button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script>
+        function openModal(requestId) {
+            const modal = document.getElementById('modal' + requestId);
+            modal.style.display = 'flex'; // Change display property to flex
+            modal.style.alignItems = 'center'; // Vertically center
+            modal.style.justifyContent = 'center'; // Horizontally center
+        }
+
+        function closeModal(requestId) {
+            const modal = document.getElementById('modal' + requestId);
+            modal.style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const forwardButtons = document.querySelectorAll('#forward');
+            forwardButtons.forEach(function(forwardButton) {
+            forwardButton.addEventListener('click', function(event) {
+                const requestId = event.currentTarget.closest('.modal').id.substring(5);
+                so_approve(requestId);
+                closeModal(requestId);
+                window.location.reload();
+            });
+        });
+
+        async function so_approve(requestId) {
+            const response = await fetch(`/so_approve?request_id=${requestId}`);
+            console.log('Status updated successfully');
+        }
+    });
+
+    </script>
+</body>
+</html>
