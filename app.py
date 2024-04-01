@@ -1,6 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Blueprint, jsonify
 import sqlite3
-from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from flask_mail import Mail, Message
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -77,6 +81,40 @@ def dashboard():
     # Pass the fetched data to the HTML template
     return render_template('dashboard.html', data=data)
 
+@app.route('/approve_request/<int:request_id>', methods=['GET'])
+def approve_request(request_id):
+    conn = sqlite3.connect('classroom_allotment_system.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE status SET fa_approved = 1 WHERE request_id = ?", (request_id,))
+    conn.commit()
+    conn.close()
+    flash('Request approved successfully!', 'success')
+    return redirect(url_for('user.dashboard'))
+
+def send_email(to_email, request_id):
+    subject = "Approval Request for Request ID {}".format(request_id)
+    print(f"Email: {os.environ.get('CRAS_Email')}")
+    print(f"Pass: {os.environ.get('CRAS_App_Password_Google')}")
+    with app.test_request_context():
+        approval_url = url_for('approve_request', request_id=request_id, _external=True)
+
+    print(approval_url)
+
+    body = "Please click the following link to approve the request: {}".format(approval_url)
+    msg = MIMEMultipart()
+    msg['From'] = os.environ.get('CRAS_Email')
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+    smtp_server.starttls()
+    smtp_server.login(os.environ.get('CRAS_Email'),os.environ.get('CRAS_App_Password_Google'))
+    text = msg.as_string()
+    smtp_server.sendmail(os.environ.get('CRAS_Email'), to_email, text)
+    smtp_server.quit()
+    print(f"Email sent successfully to {to_email} for request {request_id}!")
+
 @user.route('/submit_request', methods=['POST'])
 def submit_request():
     if request.method == 'POST':
@@ -90,16 +128,25 @@ def submit_request():
         type_of_event = request.form['type_of_event']
         remarks = request.form['remarks']
         print(request.form)
+
         conn = sqlite3.connect('classroom_allotment_system.db')
         cursor = conn.cursor()
         cursor.execute("INSERT INTO requests (date, start_time, end_time, room_block, room_no, club_id, reason, type_of_event, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (date, start_time, end_time, block, room, session['club_id'], reason, type_of_event, remarks))
+        # Retrieve request id
+        cursor.execute("SELECT last_insert_rowid()")
+        request_id = cursor.fetchone()[0]
+        print(request_id)
         cursor.execute("INSERT INTO status VALUES ((SELECT request_id FROM requests ORDER BY request_id DESC LIMIT 1), 0, 0, 0, True)")
         conn.commit()
+        cursor.execute("SELECT fa_email FROM clubs WHERE club_id = ?", (session['club_id'],))
+        fa_email = cursor.fetchone()[0]
+        print(fa_email)
         conn.close()
         
+        # Send approval request email to fa_email
+        send_email(fa_email, request_id)
+        
         return redirect(url_for('user.dashboard'))
-
-from datetime import datetime
 
 @app.route('/get_existing_requests')
 def get_existing_requests():
