@@ -149,7 +149,7 @@
 
         .modal {
             display: none;
-            align-items: center; /* Vertically center */
+            align-items: center;
             justify-content: center;
             position: fixed;
             z-index: 1;
@@ -165,7 +165,7 @@
             background-color: #fefefe;
             padding: 20px;
             border: 1px solid #888;
-            width: 40%; /* Could be more or less, depending on screen size */
+            width: 40%;
             border-radius: 5px;
         }
 
@@ -197,22 +197,17 @@
                 <div class="request-item" onclick="openModal('{{ row[0] }}')">
                     <div class="request-status-bar">
                         {% if row[-1] == 1 %}
-                            <!-- Request is ongoing, display three stages -->
                             <div class="stage {% if row[-4] == 1 %} fa-approved {% else %} black {% endif %}"></div>
                             <div class="stage {% if row[-3] == 1 %} sw-approved {% else %} black {% endif %}"></div>
                             <div class="stage {% if row[-2] == 1 %} so-approved {% else %} black {% endif %}"></div>
                         {% else %}
-                            <!-- Request is not ongoing, display single stage -->
                             <div class="stage {% if row[-4] == 1 %} approved {% else %} black {% endif %}"></div>
                         {% endif %}
                     </div>
-                    <!-- Display other request details -->
                     <p>Request id: {{ row[0] }}</p>
                 </div>
                 <div id="modal{{ row[0] }}" class="modal">
-                    <!-- Modal content -->
                     <div class="modal-content">
-                        <!-- Populate this modal with request details -->
                         <p><strong>Date:</strong> {{ row[1] }}</p>
                         <p><strong>Start Time:</strong> {{ row[2] }}</p>
                         <p><strong>End Time:</strong> {{ row[3] }}</p>
@@ -233,9 +228,9 @@
     <script>
         function openModal(requestId) {
             const modal = document.getElementById('modal' + requestId);
-            modal.style.display = 'flex'; // Change display property to flex
-            modal.style.alignItems = 'center'; // Vertically center
-            modal.style.justifyContent = 'center'; // Horizontally center
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
         }
 
         function closeModal(requestId) {
@@ -247,7 +242,7 @@
     const forwardButtons = document.querySelectorAll('#forward');
     forwardButtons.forEach(function(forwardButton) {
         forwardButton.addEventListener('click', function(event) {
-            const requestId = event.currentTarget.closest('.modal').id.substring(5); // Extract requestId from modal id
+            const requestId = event.currentTarget.closest('.modal').id.substring(5);
             sw_approve(requestId);
             closeModal(requestId);
             window.location.reload();
@@ -258,7 +253,6 @@
             console.log('Status updated successfully');
         }
     });
-
     </script>
 </body>
 </html>

@@ -186,7 +186,7 @@
             border: 1px solid #ccc;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            display: inline-block; /* Add this line */
+            display: inline-block;
         }
 
         .room-square.selected {
@@ -218,7 +218,7 @@
 
         .modal {
             display: none;
-            align-items: center; /* Vertically center */
+            align-items: center;
             justify-content: center;
             position: fixed;
             z-index: 1;
@@ -234,19 +234,18 @@
             background-color: #fefefe;
             padding: 20px;
             border: 1px solid #888;
-            width: 40%; /* Could be more or less, depending on screen size */
+            width: 40%;
             border-radius: 5px;
         }
 
         .existing-request {
-            background-color: #d3d3d3; /* Gray color */
-            pointer-events: none; /* Disable pointer events */
+            background-color: #d3d3d3;
+            pointer-events: none;
         }
 
-        /* Ongoing slot style */
         .ongoing-slot {
-            background-color: #ff6961; /* Red color */
-            pointer-events: none; /* Disable pointer events */
+            background-color: #ff6961;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -267,22 +266,17 @@
                     <div class="request-item" onclick="openModal('{{ row[0] }}')">
                         <div class="request-status-bar">
                             {% if row[-1] == 1 %}
-                                <!-- Request is ongoing, display three stages -->
                                 <div class="stage {% if row[-4] == 1 %} fa-approved {% else %} black {% endif %}"></div>
                                 <div class="stage {% if row[-3] == 1 %} sw-approved {% else %} black {% endif %}"></div>
                                 <div class="stage {% if row[-2] == 1 %} so-approved {% else %} black {% endif %}"></div>
                             {% else %}
-                                <!-- Request is not ongoing, display single stage -->
                                 <div class="stage {% if row[-4] == 1 %} approved {% else %} black {% endif %}"></div>
                             {% endif %}
                         </div>
-                        <!-- Display other request details -->
                         <p>Request id: {{ row[0] }}</p>
                     </div>
                     <div id="modal{{ row[0] }}" class="modal">
-                        <!-- Modal content -->
                         <div class="modal-content">
-                            <!-- Populate this modal with request details -->
                             <p><strong>Date:</strong> {{ row[1] }}</p>
                             <p><strong>Start Time:</strong> {{ row[2] }}</p>
                             <p><strong>End Time:</strong> {{ row[3] }}</p>
@@ -350,9 +344,9 @@
     <script>
         function openModal(requestId) {
             const modal = document.getElementById('modal' + requestId);
-            modal.style.display = 'flex'; // Change display property to flex
-            modal.style.alignItems = 'center'; // Vertically center
-            modal.style.justifyContent = 'center'; // Horizontally center
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
         }
 
         function closeModal(requestId) {
@@ -366,77 +360,69 @@
         const startValue = document.getElementById('start_time');
         const endValue = document.getElementById('end_time');
 
-        startValue.addEventListener('change', () => {
-            // Update start time value when changed
-            startValue.value = startValue.value;
-        });
+        if (blockDropdown.value !== "") {
+                roomContainer.style.display = ''; 
+        }
 
-        endValue.addEventListener('change', () => {
-            // Update end time value when changed
-            endValue.value = endValue.value;
-        });
+async function updateRoomColors() {
+    clearRoomColors();
 
-        blockDropdown.addEventListener('change', async () => {
-            if (blockDropdown.value !== "") {
-                // Fetch existing requests for the selected block and date
-                let response = await fetch(`/get_existing_requests?block=${blockDropdown.value}&date=${dateValue.value}&start_time=${startValue.value}&end_time=${endValue.value}`);
-                let existingRequests = await response.json();
+    let response = await fetch(`/get_existing_requests?block=${blockDropdown.value}&date=${dateValue.value}&start_time=${startValue.value}&end_time=${endValue.value}`);
+    let existingRequests = await response.json();
 
-                // Fetch ongoing event slots
-                response = await fetch(`/get_ongoing_slots?block=${blockDropdown.value}&date=${dateValue.value}&start_time=${startValue.value}&end_time=${endValue.value}`);
-                let ongoingSlots = await response.json();
-                // Display room grid
-                roomContainer.style.display = ''; // Change to empty string to reset to default display
+    response = await fetch(`/get_ongoing_slots?block=${blockDropdown.value}&date=${dateValue.value}&start_time=${startValue.value}&end_time=${endValue.value}`);
+    let ongoingSlots = await response.json();
 
-                // Colorize rooms based on existing requests and ongoing event slots
-                const roomSquares = document.querySelectorAll('.room-square');
-                roomSquares.forEach(square => {
-                    const row = square.dataset.row;
-                    const col = square.dataset.col;
-                    const roomNumber = `${row}0${col}`;
+    const roomSquares = document.querySelectorAll('.room-square');
+    roomSquares.forEach(square => {
+        const row = square.dataset.row;
+        const col = square.dataset.col;
+        const roomNumber = `${row}0${col}`;
 
-                    // Check if room has an existing request
-                    if (existingRequests.includes(roomNumber)) {
-                        square.classList.add('existing-request');
-                    }
+        if (existingRequests.includes(roomNumber)) {
+            square.classList.add('existing-request');
+        }
 
-                    // Check if room has an ongoing event slot
-                    if (ongoingSlots.includes(roomNumber)) {
-                        square.classList.add('ongoing-slot');
-                    }
-                });
-            } else {
-                roomContainer.style.display = 'none';
+        if (ongoingSlots.includes(roomNumber)) {
+            square.classList.add('ongoing-slot');
             }
         });
+    }
 
+    blockDropdown.addEventListener('change', async () => {
+        if (blockDropdown.value !== "") {
+            roomContainer.style.display = '';
+        } else {
+            roomContainer.style.display = 'none';
+        }
+
+        await updateRoomColors();
+    });
+
+    blockDropdown.addEventListener('change', async () => {
+        await updateRoomColors();
+    });
+
+    dateValue.addEventListener('change', async () => {
+        await updateRoomColors();
+    });
+
+    startValue.addEventListener('change', async () => {
+        await updateRoomColors();
+    });
+
+    endValue.addEventListener('change', async () => {
+        await updateRoomColors();
+    });
+
+    function clearRoomColors() {
         const roomSquares = document.querySelectorAll('.room-square');
         roomSquares.forEach(square => {
-            square.addEventListener('click', () => {
-                roomSquares.forEach(square => {
-                    square.classList.remove('selected');
-                });
-                square.classList.add('selected');
-                const row = square.dataset.row;
-                const col = square.dataset.col;
-                document.getElementById('selected_room').value = `${row}0${col}`;
-            });
+            square.classList.remove('existing-request', 'ongoing-slot', 'selected');
         });
+    }
 
-        const selectedRoomInput = document.getElementById('selected_room');
-        document.addEventListener('DOMContentLoaded', function () {
-    const selectedRoomInput = document.getElementById('selected_room');
-    document.getElementById('request').addEventListener('click', function(event) {
-        const form = document.querySelector('form');
-        if (!selectedRoomInput.value) {
-            event.preventDefault(); // Prevent form submission if room is not selected
-            alert('Please select a room before submitting the form.');
-            console.log('testing');
-        } else {
-            form.submit(); // Submit the form if room is selected
-        }
-    });
-});
+    updateRoomColors();
     </script>
 </body>
 </html>

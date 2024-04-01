@@ -13,7 +13,6 @@ user = Blueprint('user', __name__, template_folder='templates/user')
 sw = Blueprint('sw', __name__, template_folder='templates/sw')
 so = Blueprint('so', __name__, template_folder='templates/so')
 
-# Function to connect to the SQLite database
 def connect_db():
     return sqlite3.connect('classroom_allotment_system.db')
 
@@ -47,8 +46,6 @@ def login():
 
     conn = connect_db()
     c = conn.cursor()
-
-    # Query the database to check if the provided username and password are valid
     c.execute("SELECT club_username, club_password, club_id FROM clublogin WHERE club_username = ? AND club_password = ?", (username, password))
     user = c.fetchone()
     conn.close()
@@ -57,10 +54,10 @@ def login():
         session['username'] = user[0]
         session['club_id'] = user[2]  # Store the club_id in the session
         flash('Login successful!', 'success')
-        return redirect(url_for('user.dashboard'))  # Redirect to the dashboard route of the user blueprint
+        return redirect(url_for('user.dashboard'))
     else:
         flash('Invalid username or password. Please try again.', 'error')
-        return redirect(url_for('user.index'))  # Redirect to the index route of the user blueprint
+        return redirect(url_for('user.index'))
 
 @user.route('/dashboard')
 def dashboard():
@@ -69,16 +66,11 @@ def dashboard():
         return redirect(url_for('index'))
 
     club_id = session['club_id']
-     # Connect to the SQLite database
     conn = sqlite3.connect('classroom_allotment_system.db')
     cursor = conn.cursor()
-    # Fetch data from the joined tables requests and status
     cursor.execute("SELECT r.request_id, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id WHERE r.club_id = ?", (club_id,))
     data = cursor.fetchall()
-    # Close the database connection
     conn.close()
-
-    # Pass the fetched data to the HTML template
     return render_template('dashboard.html', data=data)
 
 @app.route('/approve_request/<int:request_id>', methods=['GET'])
@@ -89,9 +81,7 @@ def approve_request(request_id):
     conn.commit()
     conn.close()
     flash('Request approved successfully!', 'success')
-
     return render_template('approval_success.html', request_id=request_id)
-
 
 def send_email(to_email, request_id):
     subject = "Approval Request for Request ID {}".format(request_id)
@@ -119,7 +109,6 @@ def send_email(to_email, request_id):
 @user.route('/submit_request', methods=['POST'])
 def submit_request():
     if request.method == 'POST':
-        # Access form data
         date = request.form['date']
         start_time = request.form['start_time']
         end_time = request.form['end_time']
@@ -133,6 +122,7 @@ def submit_request():
         conn = sqlite3.connect('classroom_allotment_system.db')
         cursor = conn.cursor()
         cursor.execute("INSERT INTO requests (date, start_time, end_time, room_block, room_no, club_id, reason, type_of_event, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (date, start_time, end_time, block, room, session['club_id'], reason, type_of_event, remarks))
+        
         # Retrieve request id
         cursor.execute("SELECT last_insert_rowid()")
         request_id = cursor.fetchone()[0]
@@ -144,9 +134,7 @@ def submit_request():
         print(fa_email)
         conn.close()
         
-        # Send approval request email to fa_email
         send_email(fa_email, request_id)
-        
         return redirect(url_for('user.dashboard'))
 
 @app.route('/get_existing_requests')
@@ -156,21 +144,12 @@ def get_existing_requests():
     start_time = request.args.get('start_time')
     end_time = request.args.get('end_time')
     
-    # Prepare the SQL query with parameters substituted
-    query = "SELECT room_no FROM requests WHERE room_block = '{}' AND date = '{}' AND ((start_time <= '{}' AND end_time >= '{}') OR (start_time <= '{}' AND end_time >= '{}'))".format(block, date, start_time, end_time, start_time, end_time)
-    
-    # Print the query with substituted parameters
-    print("Final Query:", query)
-
-    # Query the database to fetch existing requests
+    query = "SELECT distinct room_no FROM status JOIN requests WHERE room_block = '{}' AND date = '{}' AND (('{}' BETWEEN start_time AND end_time) OR ('{}' BETWEEN start_time AND end_time) OR (start_time BETWEEN '{}' AND '{}'))".format(block, date, start_time, end_time, start_time, end_time)
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute(query)
     existing_requests = [row[0] for row in cursor.fetchall()]
     conn.close()
-
-    print("Existing Requests:", existing_requests)  # Print the fetched data
-
     return jsonify(existing_requests)
 
 @app.route('/get_ongoing_slots')
@@ -180,21 +159,12 @@ def get_ongoing_slots():
     start_time = request.args.get('start_time')
     end_time = request.args.get('end_time')
     
-    # Prepare the SQL query with parameters substituted
-    query = "SELECT room_no FROM slots JOIN requests ON requests.request_id = slots.request_id WHERE room_block = '{}' AND date = '{}' AND ((start_time <= '{}' AND end_time >= '{}') OR (start_time <= '{}' AND end_time >= '{}'))".format(block, date, start_time, end_time, start_time, end_time)
-
-    # Print the query with substituted parameters
-    print("Final Query:", query)
-
-    # Query the database to fetch ongoing slots
+    query = "SELECT room_no FROM slots JOIN requests ON requests.request_id = slots.request_id WHERE room_block = '{}' AND date = '{}' AND (('{}' BETWEEN start_time AND end_time) OR ('{}' BETWEEN start_time AND end_time) OR (start_time BETWEEN '{}' AND '{}'))".format(block, date, start_time, end_time, start_time, end_time)
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute(query)
     ongoing_slots = [row[0] for row in cursor.fetchall()]
     conn.close()
-
-    print("Ongoing Slots:", ongoing_slots)  # Print the fetched data
-
     return jsonify(ongoing_slots)
 
 @user.route('/logout')
@@ -214,8 +184,6 @@ def sw_login():
 
     conn = connect_db()
     c = conn.cursor()
-
-    # Query the database to check if the provided username and password are valid
     c.execute("SELECT sw_username, sw_password FROM swlogin WHERE sw_username = ? AND sw_password = ?", (username, password))
     user = c.fetchone()
     conn.close()
@@ -223,7 +191,7 @@ def sw_login():
     if user:
         session['username'] = user[0]
         flash('Login successful!', 'success')
-        return redirect(url_for('sw.dashboard'))  # Redirect to the dashboard route of the sw blueprint
+        return redirect(url_for('sw.dashboard'))
     else:
         flash('Invalid username or password. Please try again.', 'error')
         return redirect(url_for('sw.sw_index'))
@@ -235,16 +203,11 @@ def dashboard():
         return redirect(url_for('sw.sw_index'))
 
     club_id = session['club_id']
-     # Connect to the SQLite database
     conn = sqlite3.connect('classroom_allotment_system.db')
     cursor = conn.cursor()
-    # Fetch data from the joined tables requests and status
     cursor.execute("SELECT r.request_id, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id WHERE (fa_approved + sw_approved + so_approved)=1")
     data = cursor.fetchall()
-    # Close the database connection
     conn.close()
-
-    # Pass the fetched data to the HTML template
     return render_template('sw_dashboard.html', data=data)
 
 @app.route('/sw_approve')
@@ -281,8 +244,6 @@ def so_login():
 
     conn = connect_db()
     c = conn.cursor()
-
-    # Query the database to check if the provided username and password are valid
     c.execute("SELECT so_username, so_password FROM sologin WHERE so_username = ? AND so_password = ?", (username, password))
     user = c.fetchone()
     conn.close()
@@ -290,7 +251,7 @@ def so_login():
     if user:
         session['username'] = user[0]
         flash('Login successful!', 'success')
-        return redirect(url_for('so.dashboard'))  # Redirect to the dashboard route of the so blueprint
+        return redirect(url_for('so.dashboard'))
     else:
         flash('Invalid username or password. Please try again.', 'error')
         return redirect(url_for('so.so_index'))
@@ -302,16 +263,11 @@ def dashboard():
         return redirect(url_for('so.so_index'))
 
     club_id = session['club_id']
-     # Connect to the SQLite database
     conn = sqlite3.connect('classroom_allotment_system.db')
     cursor = conn.cursor()
-    # Fetch data from the joined tables requests and status
     cursor.execute("SELECT r.request_id, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id WHERE (fa_approved + sw_approved + so_approved)=2")
     data = cursor.fetchall()
-    # Close the database connection
     conn.close()
-
-    # Pass the fetched data to the HTML template
     return render_template('so_dashboard.html', data=data)
 
 @sw.route('/logout')
