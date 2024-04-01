@@ -95,9 +95,8 @@ def send_email(to_email, request_id):
     subject = "Approval Request for Request ID {}".format(request_id)
     print(f"Email: {os.environ.get('CRAS_Email')}")
     print(f"Pass: {os.environ.get('CRAS_App_Password_Google')}")
-    root_url = request.host_url
     # Construct the approval URL by appending the route to it
-    approval_url = root_url + url_for('approve_request', request_id=request_id, _external=True)
+    approval_url = url_for('approve_request', request_id=request_id, _external=True)
 
     print(approval_url)
 
