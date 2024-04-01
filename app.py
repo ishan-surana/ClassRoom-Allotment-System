@@ -155,17 +155,22 @@ def get_existing_requests():
     date = request.args.get('date')
     start_time = request.args.get('start_time')
     end_time = request.args.get('end_time')
-    room = request.args.get('room')
     
-    # Query the database to fetch existing requests for the selected block, room, date, start time, and end time
+    # Prepare the SQL query with parameters substituted
+    query = "SELECT room_no FROM requests WHERE room_block = '{}' AND date = '{}' AND ((start_time <= '{}' AND end_time >= '{}') OR (start_time <= '{}' AND end_time >= '{}'))".format(block, date, start_time, end_time, start_time, end_time)
+    
+    # Print the query with substituted parameters
+    print("Final Query:", query)
+
+    # Query the database to fetch existing requests
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT room_no FROM requests WHERE room_block = ? AND room_no = ? AND date = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?))", 
-                   (block, room, date, start_time, start_time, end_time, end_time))
+    cursor.execute(query)
     existing_requests = [row[0] for row in cursor.fetchall()]
-    print(date)
-    print(existing_requests)
     conn.close()
+
+    print("Existing Requests:", existing_requests)  # Print the fetched data
+
     return jsonify(existing_requests)
 
 @app.route('/get_ongoing_slots')
@@ -175,16 +180,21 @@ def get_ongoing_slots():
     start_time = request.args.get('start_time')
     end_time = request.args.get('end_time')
     
-    print(request.args)
-    # Query the database to fetch ongoing slots for the selected block, room, and date
+    # Prepare the SQL query with parameters substituted
+    query = "SELECT room_no FROM slots JOIN requests ON requests.request_id = slots.request_id WHERE room_block = '{}' AND date = '{}' AND ((start_time <= '{}' AND end_time >= '{}') OR (start_time <= '{}' AND end_time >= '{}'))".format(block, date, start_time, end_time, start_time, end_time)
+
+    # Print the query with substituted parameters
+    print("Final Query:", query)
+
+    # Query the database to fetch ongoing slots
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT room_no FROM slots JOIN requests ON requests.request_id = slots.request_id WHERE requests.room_block = ? AND requests.date = ? AND requests.start_time <= ? AND requests.end_time >= ?", 
-                   (block, date, start_time, end_time))
+    cursor.execute(query)
     ongoing_slots = [row[0] for row in cursor.fetchall()]
-    print(date)
-    print(ongoing_slots)
     conn.close()
+
+    print("Ongoing Slots:", ongoing_slots)  # Print the fetched data
+
     return jsonify(ongoing_slots)
 
 @user.route('/logout')
