@@ -119,26 +119,6 @@
             background-color: black;
         }
 
-        .room-square.selected {
-            background-color: #007bff;
-        }
-
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            background-color: #007bff;
-            color: #fff;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-left: 25%;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
         .request-details {
             display: none;
             padding: 20px;
@@ -165,26 +145,60 @@
             background-color: #fefefe;
             padding: 20px;
             border: 1px solid #888;
-            width: 40%;
+            width: 40%; /* Adjust width as needed */
             border-radius: 5px;
+            align-items: left;
         }
 
         #forward {
             background-color: mediumspringgreen;
-            margin-right: 20%;
+        }
+
+        #reject {
+            background-color: red;
         }
 
         #forward:hover {
             background-color: mediumseagreen;
         }
 
+        #reject:hover {
+            background-color: darkred;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-evenly; /* Change to evenly distribute space */
+        }
+
+        .button-container button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            min-width: 120px; /* Set a minimum width for buttons */
+            text-align: center;
+            margin-right: 30px; /* Add margin to the right of each button */
+        }
+
+        .button-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .button-container button:last-child {
+            margin-right: 0; /* Remove margin from the last button */
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Dashboard</h1>
             <div class="logout-button">
-                <form action="/so/logout" method="GET">
+                <form action="/sw/logout" method="GET">
                     <button type="submit">Logout</button>
                 </form>
             </div>
@@ -208,17 +222,19 @@
                 </div>
                 <div id="modal{{ row[0] }}" class="modal">
                     <div class="modal-content">
-                        <p><strong>Date:</strong> {{ row[1] }}</p>
-                        <p><strong>Start Time:</strong> {{ row[2] }}</p>
-                        <p><strong>End Time:</strong> {{ row[3] }}</p>
-                        <p><strong>Room Block:</strong> {{ row[4] }}</p>
-                        <p><strong>Room Number:</strong> {{ row[5] }}</p>
-                        <p><strong>Reason:</strong> {{ row[7] }}</p>
-                        <p><strong>Type of Event:</strong> {{ row[8] }}</p>
-                        <p><strong>Remarks:</strong> {{ row[9] }}</p>
-                        <div style="display: flex; justify-content: center; margin-right: 50px;">
+                        <p><strong>Club:</strong> {{ row[1] }}</p>
+                        <p><strong>Date:</strong> {{ row[2] }}</p>
+                        <p><strong>Start Time:</strong> {{ row[3] }}</p>
+                        <p><strong>End Time:</strong> {{ row[4] }}</p>
+                        <p><strong>Room Block:</strong> {{ row[5] }}</p>
+                        <p><strong>Room Number:</strong> {{ row[6] }}</p>
+                        <p><strong>Reason:</strong> {{ row[8] }}</p>
+                        <p><strong>Type of Event:</strong> {{ row[9] }}</p>
+                        <p><strong>Remarks:</strong> {{ row[10] }}</p>
+                        <div class="button-container">
                             <button onclick="closeModal('{{ row[0] }}')">Close</button>
                             <button id="forward">Forward</button>
+                            <button id="reject">Reject</button>
                         </div>
                     </div>
                 </div>
@@ -251,6 +267,23 @@
 
         async function so_approve(requestId) {
             const response = await fetch(`/so_approve?request_id=${requestId}`);
+            console.log('Status updated successfully');
+            location.reload();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const rejectButtons = document.querySelectorAll('#reject');
+        rejectButtons.forEach(function(rejectButton) {
+            rejectButton.addEventListener('click', function(event) {
+                const requestId = event.currentTarget.closest('.modal').id.substring(5);
+                reject_request(requestId);
+                closeModal(requestId);
+                window.location.reload();
+            });
+        });
+        async function reject_request(requestId) {
+            const response = await fetch(`/reject_request?request_id=${requestId}`);
             console.log('Status updated successfully');
             location.reload();
         }

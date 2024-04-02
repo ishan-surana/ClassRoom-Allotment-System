@@ -36,8 +36,9 @@ def redirect_to_portal():
     else:
         return "Invalid portal selected"
 
-@app.route('/approve_request/<int:request_id>', methods=['GET'])
-def approve_request(request_id):
+@app.route('/approve_request')
+def approve_request():
+    request_id = int(request.args.get('request_id'))
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("UPDATE status SET fa_approved = 1 WHERE request_id = ?", (request_id,))
@@ -46,6 +47,18 @@ def approve_request(request_id):
     flash('Request approved successfully!', 'success')
     return render_template('approval_success.html', request_id=request_id)
 
+@app.route('/reject_request')
+def reject_request():
+    request_id = int(request.args.get('request_id'))
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM status WHERE request_id = ?",(request_id,))
+    cursor.execute("DELETE FROM requests WHERE request_id = ?",(request_id,))
+    conn.commit()
+    conn.close()
+    flash('Request approved successfully!', 'success')
+    return render_template('rejection_success.html', request_id=request_id)
+
 def send_email(to_email, request_id, request):
     conn = connect_db()
     cursor = conn.cursor()
@@ -53,6 +66,7 @@ def send_email(to_email, request_id, request):
     club_name = cursor.fetchone()[0]
     subject = "Approval Request from {} (Request ID {})".format(club_name, request_id)
     approval_url = url_for('approve_request', request_id=request_id, _external=True)
+    rejection_url = url_for('reject_request', request_id=request_id, _external=True)
 
     date = request.form['date']
     start_time = request.form['start_time']
@@ -62,7 +76,7 @@ def send_email(to_email, request_id, request):
     reason = request.form['reason']
     type_of_event = request.form['type_of_event']
     remarks = request.form['remarks']
-    body = "Club {} has requested {} room {} on {} from {} to {}.\nReason:- {}\nType of event:- {}\nRemarks:- {}\n\nPlease click the following link to approve the request: {}".format(club_name, block, room, date, start_time, end_time, reason, type_of_event, remarks, approval_url)
+    body = "Club {} has requested {} room {} on {} from {} to {}.\nReason:- {}\nType of event:- {}\nRemarks:- {}\n\nPlease click the following link to APPROVE the request: {}\nor the following to REJECT the request: {}".format(club_name, block, room, date, start_time, end_time, reason, type_of_event, remarks, approval_url, rejection_url)
     msg = MIMEMultipart()
     msg['From'] = os.environ.get('CRAS_Email')
     msg['To'] = to_email
@@ -80,7 +94,6 @@ def send_email(to_email, request_id, request):
 @app.route('/user/get_dashboard_data')
 def get_dashboard_data():
     if 'club_id' not in session:
-        print("hello")
         return jsonify(message="Authentication required to access dashboard data")
     
     conn = connect_db()
@@ -223,17 +236,17 @@ def sw_index():
 
 @sw.route('/login', methods=['POST'])
 def sw_login():
-    username = request.form['username']
-    password = request.form['password']
+    sw_username = request.form['sw_username']
+    sw_password = request.form['sw_password']
 
     conn = connect_db()
     c = conn.cursor()
-    c.execute("SELECT sw_username, sw_password FROM swlogin WHERE sw_username = ? AND sw_password = ?", (username, password))
+    c.execute("SELECT sw_username, sw_password FROM swlogin WHERE sw_username = ? AND sw_password = ?", (sw_username, sw_password))
     user = c.fetchone()
     conn.close()
 
     if user:
-        session['username'] = user[0]
+        session['sw_username'] = user[0]
         flash('Login successful!', 'success')
         return redirect(url_for('sw.dashboard'))
     else:
@@ -242,20 +255,20 @@ def sw_login():
     
 @sw.route('/dashboard')
 def dashboard():
-    if 'username' not in session:
+    if 'sw_username' not in session:
         flash('You need to login first.', 'error')
         return redirect(url_for('sw.sw_index'))
 
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT r.request_id, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id WHERE (fa_approved + sw_approved + so_approved)=1")
+    cursor.execute("SELECT r.request_id, club_name, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id JOIN clubs c ON r.club_id = c.club_id WHERE (fa_approved + sw_approved + so_approved)=1")
     data = cursor.fetchall()
     conn.close()
     return render_template('sw_dashboard.html', data=data)
 
 @sw.route('/logout')
 def logout():
-    session.pop('username', None)
+    session.pop('sw_username', None)
     flash('You have been logged out.', 'success')
     return redirect(url_for('sw.sw_index'))
 
@@ -265,17 +278,17 @@ def so_index():
 
 @so.route('/login', methods=['POST'])
 def so_login():
-    username = request.form['username']
-    password = request.form['password']
+    so_username = request.form['so_username']
+    so_password = request.form['so_password']
 
     conn = connect_db()
     c = conn.cursor()
-    c.execute("SELECT so_username, so_password FROM sologin WHERE so_username = ? AND so_password = ?", (username, password))
+    c.execute("SELECT so_username, so_password FROM sologin WHERE so_username = ? AND so_password = ?", (so_username, so_password))
     user = c.fetchone()
     conn.close()
 
     if user:
-        session['username'] = user[0]
+        session['so_username'] = user[0]
         flash('Login successful!', 'success')
         return redirect(url_for('so.dashboard'))
     else:
@@ -284,20 +297,20 @@ def so_login():
     
 @so.route('/dashboard')
 def dashboard():
-    if 'username' not in session:
+    if 'so_username' not in session:
         flash('You need to login first.', 'error')
         return redirect(url_for('so.so_index'))
     
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT r.request_id, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id WHERE (fa_approved + sw_approved + so_approved)=2")
+    cursor.execute("SELECT r.request_id, club_name, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id JOIN clubs c ON r.club_id = c.club_id WHERE (fa_approved + sw_approved + so_approved)=2")
     data = cursor.fetchall()
     conn.close()
     return render_template('so_dashboard.html', data=data)
 
 @so.route('/logout')
 def logout():
-    session.pop('username', None)
+    session.pop('so_username', None)
     flash('You have been logged out.', 'success')
     return redirect(url_for('so.so_index'))
 
@@ -306,4 +319,4 @@ app.register_blueprint(sw, url_prefix='/sw')
 app.register_blueprint(so, url_prefix='/so')
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
