@@ -252,6 +252,7 @@
         async function so_approve(requestId) {
             const response = await fetch(`/so_approve?request_id=${requestId}`);
             console.log('Status updated successfully');
+            location.reload();
         }
     });
     </script>

@@ -107,6 +107,7 @@
             flex: 1;
             height: 100%;
             border-right: 1px solid white;
+            background-color: black;
         }
 
         .stage.fa-approved {
@@ -389,6 +390,34 @@ async function updateRoomColors() {
         });
     }
 
+    const roomSquares = document.querySelectorAll('.room-square');
+        roomSquares.forEach(square => {
+            square.addEventListener('click', () => {
+                roomSquares.forEach(square => {
+                    square.classList.remove('selected');
+                });
+                square.classList.add('selected');
+                const row = square.dataset.row;
+                const col = square.dataset.col;
+                document.getElementById('selected_room').value = `${row}0${col}`;
+            });
+        });
+
+    const selectedRoomInput = document.getElementById('selected_room');
+        document.addEventListener('DOMContentLoaded', function () {
+        const selectedRoomInput = document.getElementById('selected_room');
+        document.getElementById('request').addEventListener('click', function(event) {
+        const form = document.querySelector('form');
+        if (!selectedRoomInput.value) {
+                event.preventDefault(); // Prevent form submission if room is not selected
+                alert('Please select a room before submitting the form.');
+                console.log('testing');
+            } else {
+                form.submit(); // Submit the form if room is selected
+            }
+        });
+    });
+
     blockDropdown.addEventListener('change', async () => {
         if (blockDropdown.value !== "") {
             roomContainer.style.display = '';
@@ -422,6 +451,53 @@ async function updateRoomColors() {
         });
     }
 
+    function findPContainingText(text) {
+    var allPTags = document.querySelectorAll('p');
+    for (let i = 0; i < allPTags.length; i++) {
+        if (allPTags[i].textContent.includes(text)) {
+            return allPTags[i];
+        }
+    }
+    return null;
+}
+
+async function fetchAndUpdateData() {
+        const response = await fetch('/user/get_dashboard_data');
+        const data = await response.json();
+        for (const row of data) {
+    (function(requestId) {
+        const faApproved = row[1];
+        const swApproved = row[2];
+        const soApproved = row[3];
+        const ongoing = row[4];
+        
+        const requestStatusText = findPContainingText(`Request id: ${requestId}`);
+        if (requestStatusText) {
+            const requestStatusBarContainer = requestStatusText.parentElement;
+            if (requestStatusBarContainer) {
+                requestStatusBarContainer.innerHTML = '';
+                const requestStatusBar = document.createElement('div');
+                requestStatusBar.classList.add('request-status-bar');
+
+                if (faApproved) requestStatusBar.innerHTML += '<div class="stage fa-approved"></div>';
+                else requestStatusBar.innerHTML += '<div class="stage"></div>';
+                if (swApproved) requestStatusBar.innerHTML += '<div class="stage sw-approved"></div>';
+                else requestStatusBar.innerHTML += '<div class="stage"></div>';
+                if (soApproved) requestStatusBar.innerHTML += '<div class="stage so-approved"></div>'; 
+                else requestStatusBar.innerHTML += '<div class="stage"></div>';
+                
+                const requestIdElement = document.createElement('p');
+                requestIdElement.textContent = `Request id: ${requestId}`;
+                requestStatusBarContainer.appendChild(requestStatusBar);
+                requestStatusBarContainer.appendChild(requestIdElement);
+            }
+        }
+    })(row[0]); // Immediately invoke the closure with the requestId
+}
+}
+
+    fetchAndUpdateData();
+    setInterval(fetchAndUpdateData, 1000);
     updateRoomColors();
     </script>
 </body>

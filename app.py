@@ -3,7 +3,6 @@ import sqlite3
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask_mail import Mail, Message
 import os
 
 app = Flask(__name__)
@@ -34,6 +33,97 @@ def redirect_to_portal():
         return redirect(url_for('so.so_index'))
     else:
         return "Invalid portal selected"
+
+@app.route('/approve_request/<int:request_id>', methods=['GET'])
+def approve_request(request_id):
+    conn = sqlite3.connect('classroom_allotment_system.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE status SET fa_approved = 1 WHERE request_id = ?", (request_id,))
+    conn.commit()
+    conn.close()
+    flash('Request approved successfully!', 'success')
+    return render_template('approval_success.html', request_id=request_id)
+
+def send_email(to_email, request_id):
+    subject = "Approval Request for Request ID {}".format(request_id)
+    print(f"Email: {os.environ.get('CRAS_Email')}")
+    print(f"Pass: {os.environ.get('CRAS_App_Password_Google')}")
+    approval_url = url_for('approve_request', request_id=request_id, _external=True)
+
+    body = "Please click the following link to approve the request: {}".format(approval_url)
+    msg = MIMEMultipart()
+    msg['From'] = os.environ.get('CRAS_Email')
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+    smtp_server.starttls()
+    smtp_server.login(os.environ.get('CRAS_Email'),os.environ.get('CRAS_App_Password_Google'))
+    text = msg.as_string()
+    smtp_server.sendmail(os.environ.get('CRAS_Email'), to_email, text)
+    smtp_server.quit()
+    print(f"Email sent successfully to {to_email} for request {request_id}!")
+
+@app.route('/user/get_dashboard_data')
+def get_dashboard_data():
+    conn = sqlite3.connect('classroom_allotment_system.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM status s JOIN requests r ON r.request_id = s.request_id AND club_id = ?", (session['club_id'], ))
+    updated_data = cursor.fetchall()
+    conn.close()
+    return jsonify(updated_data)
+
+@app.route('/get_existing_requests')
+def get_existing_requests():
+    block = request.args.get('block')
+    date = request.args.get('date')
+    start_time = request.args.get('start_time')
+    end_time = request.args.get('end_time')
+    
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT distinct room_no FROM status JOIN requests WHERE room_block = ? AND date = ? AND ((? BETWEEN start_time AND end_time) OR (? BETWEEN start_time AND end_time) OR (start_time BETWEEN ? AND ?))", (block, date, start_time, end_time, start_time, end_time,))
+    existing_requests = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(existing_requests)
+
+@app.route('/get_ongoing_slots')
+def get_ongoing_slots():
+    block = request.args.get('block')
+    date = request.args.get('date')
+    start_time = request.args.get('start_time')
+    end_time = request.args.get('end_time')
+    
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT room_no FROM slots JOIN requests ON requests.request_id = slots.request_id WHERE room_block = ? AND date = ? AND ((? BETWEEN start_time AND end_time) OR (? BETWEEN start_time AND end_time) OR (start_time BETWEEN ? AND ?))", (block, date, start_time, end_time, start_time, end_time, ))
+    ongoing_slots = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(ongoing_slots)
+
+@app.route('/sw_approve')
+def sw_approve():
+    request_id = int(request.args.get('request_id'))
+    print(request_id)
+    conn = sqlite3.connect('classroom_allotment_system.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE status SET sw_approved = 1 WHERE request_id = ?",(request_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': 'Status updated successfully'})
+
+@app.route('/so_approve')
+def so_approve():
+    request_id = int(request.args.get('request_id'))
+    print(request_id)
+    conn = sqlite3.connect('classroom_allotment_system.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE status SET so_approved = 1 WHERE request_id = ?",(request_id,))
+    cursor.execute("INSERT INTO slots values(?, 1)",(request_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': 'Status updated successfully'})
 
 @user.route('/')
 def index():
@@ -73,39 +163,6 @@ def dashboard():
     conn.close()
     return render_template('dashboard.html', data=data)
 
-@app.route('/approve_request/<int:request_id>', methods=['GET'])
-def approve_request(request_id):
-    conn = sqlite3.connect('classroom_allotment_system.db')
-    cursor = conn.cursor()
-    cursor.execute("UPDATE status SET fa_approved = 1 WHERE request_id = ?", (request_id,))
-    conn.commit()
-    conn.close()
-    flash('Request approved successfully!', 'success')
-    return render_template('approval_success.html', request_id=request_id)
-
-def send_email(to_email, request_id):
-    subject = "Approval Request for Request ID {}".format(request_id)
-    print(f"Email: {os.environ.get('CRAS_Email')}")
-    print(f"Pass: {os.environ.get('CRAS_App_Password_Google')}")
-    approval_url = url_for('approve_request', request_id=request_id, _external=True)
-
-    print(approval_url)
-
-    body = "Please click the following link to approve the request: {}".format(approval_url)
-    msg = MIMEMultipart()
-    msg['From'] = os.environ.get('CRAS_Email')
-    msg['To'] = to_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
-
-    smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
-    smtp_server.starttls()
-    smtp_server.login(os.environ.get('CRAS_Email'),os.environ.get('CRAS_App_Password_Google'))
-    text = msg.as_string()
-    smtp_server.sendmail(os.environ.get('CRAS_Email'), to_email, text)
-    smtp_server.quit()
-    print(f"Email sent successfully to {to_email} for request {request_id}!")
-
 @user.route('/submit_request', methods=['POST'])
 def submit_request():
     if request.method == 'POST':
@@ -136,36 +193,6 @@ def submit_request():
         
         send_email(fa_email, request_id)
         return redirect(url_for('user.dashboard'))
-
-@app.route('/get_existing_requests')
-def get_existing_requests():
-    block = request.args.get('block')
-    date = request.args.get('date')
-    start_time = request.args.get('start_time')
-    end_time = request.args.get('end_time')
-    
-    query = "SELECT distinct room_no FROM status JOIN requests WHERE room_block = '{}' AND date = '{}' AND (('{}' BETWEEN start_time AND end_time) OR ('{}' BETWEEN start_time AND end_time) OR (start_time BETWEEN '{}' AND '{}'))".format(block, date, start_time, end_time, start_time, end_time)
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute(query)
-    existing_requests = [row[0] for row in cursor.fetchall()]
-    conn.close()
-    return jsonify(existing_requests)
-
-@app.route('/get_ongoing_slots')
-def get_ongoing_slots():
-    block = request.args.get('block')
-    date = request.args.get('date')
-    start_time = request.args.get('start_time')
-    end_time = request.args.get('end_time')
-    
-    query = "SELECT room_no FROM slots JOIN requests ON requests.request_id = slots.request_id WHERE room_block = '{}' AND date = '{}' AND (('{}' BETWEEN start_time AND end_time) OR ('{}' BETWEEN start_time AND end_time) OR (start_time BETWEEN '{}' AND '{}'))".format(block, date, start_time, end_time, start_time, end_time)
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute(query)
-    ongoing_slots = [row[0] for row in cursor.fetchall()]
-    conn.close()
-    return jsonify(ongoing_slots)
 
 @user.route('/logout')
 def logout():
@@ -207,32 +234,16 @@ def dashboard():
     cursor = conn.cursor()
     cursor.execute("SELECT r.request_id, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id WHERE (fa_approved + sw_approved + so_approved)=1")
     data = cursor.fetchall()
+    print(data)
     conn.close()
     return render_template('sw_dashboard.html', data=data)
 
-@app.route('/sw_approve')
-def sw_approve():
-    request_id = int(request.args.get('request_id'))
-    print(request_id)
-    conn = sqlite3.connect('classroom_allotment_system.db')
-    cursor = conn.cursor()
-    cursor.execute("UPDATE status SET sw_approved = 1 WHERE request_id = ?",(request_id,))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Status updated successfully'})
+@sw.route('/logout')
+def logout():
+    session.pop('username', None)
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('sw.sw_index'))
 
-@app.route('/so_approve')
-def so_approve():
-    request_id = int(request.args.get('request_id'))
-    print(request_id)
-    conn = sqlite3.connect('classroom_allotment_system.db')
-    cursor = conn.cursor()
-    cursor.execute("UPDATE status SET so_approved = 1 WHERE request_id = ?",(request_id,))
-    cursor.execute("INSERT INTO slots values(?, 1)",(request_id,))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Status updated successfully'})
-    
 @so.route('/')
 def so_index():
     return render_template('so_login.html')
@@ -269,12 +280,6 @@ def dashboard():
     data = cursor.fetchall()
     conn.close()
     return render_template('so_dashboard.html', data=data)
-
-@sw.route('/logout')
-def logout():
-    session.pop('username', None)
-    flash('You have been logged out.', 'success')
-    return redirect(url_for('sw.sw_index'))
 
 @so.route('/logout')
 def logout():
