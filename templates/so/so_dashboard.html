@@ -9,6 +9,8 @@
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
+            background-color: #121212; /* Dark background color */
+            color: #fff; /* Light text color */
         }
 
         .header {
@@ -44,6 +46,9 @@
 
         .logout-button button:hover {
             background-color: #c82333;
+            box-shadow: 0 0 25px 8px red;
+            transition: background-color 0.3s ease;
+            transition: box-shadow 1s ease;
         }
 
         .content {
@@ -52,7 +57,8 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f2f2f2;
+            background-color: #121212; /* Dark background color */
+            color: #fff; /* Light text color */
         }
 
         .dashboard-container {
@@ -67,10 +73,10 @@
             flex: 1;
             padding: 20px;
             border-radius: 20px;
-            border-right: 3px solid #ccc;
             overflow: hidden;
-            background-color: #fff;
-            margin: 10px;
+            background-color: #333;
+            margin: 30px;
+            box-shadow: 0px 0px 12px 12px rgba(255, 255, 255, 1);
         }
 
         .request-item {
@@ -79,24 +85,26 @@
             padding-left: 10px;
             margin-bottom: 20px;
             border-radius: 5px;
+            border: 1px solid #555; /* Dark border color */
         }
 
         .request-item:hover {
-            border: 1px solid black;
+            border: 1px solid #fff; /* Light border color */
         }
 
         .request-status-bar {
             display: flex;
             align-items: center;
             height: 20px;
-            border: 1px solid #ccc;
+            border: 1px solid #555; /* Dark border color */
             margin-bottom: 5px;
         }
 
         .stage {
             flex: 1;
             height: 100%;
-            border-right: 1px solid white;
+            border-right: 1px solid #fff; /* Light border color */
+            background-color: black;
         }
 
         .stage.fa-approved {
@@ -139,19 +147,27 @@
             height: 100%;
             overflow: auto;
             background-color: rgba(0,0,0,0.4);
+            flex-direction: column;
         }
 
         .modal-content {
-            background-color: #fefefe;
+            background-color: #333; /* Dark background color */
+            color: #fff; /* Light text color */
             padding: 20px;
-            border: 1px solid #888;
-            width: 40%; /* Adjust width as needed */
             border-radius: 5px;
-            align-items: left;
+            border: 1px solid #888;
+            width: 40%;
+        }
+
+        .modal-content h2 {
+            text-align: center; /* Center the text */
+            margin-top: 0; /* Remove default margin */
+            margin-bottom: 20px; /* Add some margin at the bottom */
         }
 
         #forward {
             background-color: mediumspringgreen;
+            color: black;
         }
 
         #reject {
@@ -160,6 +176,7 @@
 
         #forward:hover {
             background-color: mediumseagreen;
+            color: white;
         }
 
         #reject:hover {
@@ -196,7 +213,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Dashboard</h1>
+        <h1 style="font-size: 50px;">Security Office Dashboard</h1>
             <div class="logout-button">
                 <form action="/sw/logout" method="GET">
                     <button type="submit">Logout</button>
@@ -222,6 +239,7 @@
                 </div>
                 <div id="modal{{ row[0] }}" class="modal">
                     <div class="modal-content">
+                        <h2><u>Request id: {{ row[0] }}</u></h2>
                         <p><strong>Club:</strong> {{ row[1] }}</p>
                         <p><strong>Date:</strong> {{ row[2] }}</p>
                         <p><strong>Start Time:</strong> {{ row[3] }}</p>

@@ -7,19 +7,31 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
+            background-color: rgba(0,0,0,0.9);
             display: flex;
-            justify-content: center;
+            justify-content: space-evenly;
             align-items: center;
-            height: 100vh;
+            height: 90vh;
+            box-sizing: border-box;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        img {
+            height: 40px;
+            width: auto;
+            margin: 0;
+            margin-right: 20px;
         }
 
         h1 {
+            color: #f2f2f2;
             text-align: center;
             margin-bottom: 20px;
         }
 
         p {
+            color: #f2f2f2;
             text-align: center;
             margin-bottom: 20px;
         }
@@ -32,7 +44,7 @@
 
         button {
             padding: 10px 20px;
-            margin: 5px;
+            margin-bottom: 15px;
             margin-left: 50px;
             border: none;
             border-radius: 5px;
@@ -41,26 +53,70 @@
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s ease;
-        }
-
-        div {
-            padding-right: 50px;
+            width: 130px;
         }
 
         button:hover {
             background-color: #0056b3;
         }
+
+        #main {
+            border: 1px #f2f2f2 solid;
+            display: flex;
+            padding: 30px;
+            align-items: center;
+            border-radius: 20px;
+            box-shadow: 0 0 30px 5px #0056b3;
+            transition: box-shadow 0.3s ease;
+        }
+
+        #main:hover {
+            box-shadow: 0 0 50px 15px white;
+        }
+
+        #main.shadow-on-hover.hovered-user {
+            box-shadow: 0 0 50px 15px red;
+        }
+
+        #main.shadow-on-hover.hovered-sw {
+            box-shadow: 0 0 50px 15px lime;
+        }
+
+        #main.shadow-on-hover.hovered-so {
+            box-shadow: 0 0 50px 15px yellow;
+        }
+
     </style>
 </head>
 <body>
-    <div>
-    <h1>Welcome to the Portal Selection Page</h1>
-    <p>Please choose which portal you want to access:</p>
+        <img src="https://almashines.s3.dualstack.ap-southeast-1.amazonaws.com/assets/images/institutes/logo/170x170/947.jpg?v=1654254966">
+        <h1 style="font-size: 50px; margin-top: -40px;">Classroom Allotment System</h1>
+    <div id="main" class="shadow-on-hover">
+        <div>
+            <h1>Welcome to the Portal Selection Page</h1>
+            <p>Please choose which portal you want to access:</p>
+            <strong><u style="color: lightblue;"><p id="portal_name" style="color: lightblue;"></p></u></strong>
+        </div>
+        <form action="/redirect" method="post">
+            <button type="submit" name="portal" value="user" onmouseover="hovered('user')" onmouseout="notHovered('user')">User Portal</button>
+            <button type="submit" name="portal" value="sw" onmouseover="hovered('sw')" onmouseout="notHovered('sw')">SW Portal</button>
+            <button type="submit" name="portal" value="so" onmouseover="hovered('so')" onmouseout="notHovered('so')">SO Portal</button>
+        </form>
     </div>
-    <form action="/redirect" method="post">
-        <button type="submit" name="portal" value="user">User Portal</button>
-        <button type="submit" name="portal" value="sw">SW Portal</button>
-        <button type="submit" name="portal" value="so">SO Portal</button>
-    </form>
+
+    <script>
+        function hovered(portal) {
+            const main = document.getElementById('main');
+            main.classList.add('hovered-' + portal);
+            const portal_name = document.getElementById('portal_name')
+            portal_name.textContent = portal.toUpperCase() + " portal selected.";
+        }
+
+        function notHovered(portal) {
+            const main = document.getElementById('main');
+            main.classList.remove('hovered-' + portal);
+            document.getElementById('portal_name').textContent = '';
+        }
+    </script>
 </body>
 </html>

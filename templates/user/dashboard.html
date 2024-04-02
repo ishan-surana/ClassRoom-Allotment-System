@@ -9,6 +9,8 @@
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
+            background-color: #121212; /* Dark background color */
+            color: #fff; /* Light text color */
         }
 
         .header {
@@ -44,6 +46,9 @@
 
         .logout-button button:hover {
             background-color: #c82333;
+            box-shadow: 0 0 25px 8px red;
+            transition: background-color 0.3s ease;
+            transition: box-shadow 1s ease;
         }
 
         .content {
@@ -52,7 +57,8 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f2f2f2;
+            background-color: #121212; /* Dark background color */
+            color: #fff; /* Light text color */
         }
 
         .dashboard-container {
@@ -63,25 +69,15 @@
             background-color: transparent;
         }
 
-        .left-panel {
-            flex: 1;
-            padding: 20px;
-            border-radius: 20px;
-            border-right: 3px solid #ccc;
-            overflow: hidden;
-            background-color: #fff;
-            margin: 10px;
-        }
-
-        .right-panel {
-            flex: 1;
-            padding: 20px;
-            border-radius: 20px;
-            border-right: 3px solid #ccc;
-            overflow: hidden;
-            background-color: #fff;
-            margin: 10px;
-        }
+    .left-panel, .right-panel {
+        flex: 1;
+        padding: 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        background-color: #333;
+        margin: 30px;
+        box-shadow: 0px 0px 12px 12px rgba(255, 255, 255, 1); /* White glow effect */
+    }
 
         .request-item {
             padding-top: 10px;
@@ -89,24 +85,25 @@
             padding-left: 10px;
             margin-bottom: 20px;
             border-radius: 5px;
+            border: 1px solid #555; /* Dark border color */
         }
 
         .request-item:hover {
-            border: 1px solid black;
+            border: 1px solid #fff; /* Light border color */
         }
 
         .request-status-bar {
             display: flex;
             align-items: center;
             height: 20px;
-            border: 1px solid #ccc;
+            border: 1px solid #555; /* Dark border color */
             margin-bottom: 5px;
         }
 
         .stage {
             flex: 1;
             height: 100%;
-            border-right: 1px solid white;
+            border-right: 1px solid #fff; /* Light border color */
             background-color: black;
         }
 
@@ -138,20 +135,27 @@
             font-weight: bold;
             margin-bottom: 5px;
             display: block;
+            color: #fff; /* Light text color */
         }
 
         .form-group select {
             width: 100%;
             padding: 10px;
             border-radius: 5px;
-            border: 1px solid #ccc;
+            border: 1px solid #555; /* Dark border color */
             font-size: 16px;
+            background-color: #333; /* Dark container background color */
+            color: #fff; /* Light text color */
         }
 
         .form-group textarea, input {
             width: calc(100% - 22px);
             font-size: medium;
             padding: 2px;
+            border-radius: 5px;
+            border: 1px solid #555; /* Dark border color */
+            background-color: #333; /* Dark container background color */
+            color: #fff; /* Light text color */
         }
         
         .time-input-container {
@@ -167,12 +171,17 @@
             margin-bottom: 5px;
             display: block;
             margin-right: -10px;
+            color: #fff; /* Light text color */
         }
 
         .time-input {
             width: calc(45% - 5px);
             display: inline-block;
             margin-right: 30px;
+            border-radius: 5px;
+            border: 1px solid #555; /* Dark border color */
+            background-color: #333; /* Dark container background color */
+            color: #fff; /* Light text color */
         }
 
         .room-grid {
@@ -184,7 +193,7 @@
         .room-square {
             width: 30px;
             height: 30px;
-            border: 1px solid #ccc;
+            border: 1px solid #555; /* Dark border color */
             cursor: pointer;
             transition: background-color 0.3s ease;
             display: inline-block;
@@ -232,11 +241,12 @@
         }
 
         .modal-content {
-            background-color: #fefefe;
+            background-color: #333; /* Dark background color */
+            color: #fff; /* Light text color */
             padding: 20px;
+            border-radius: 5px;
             border: 1px solid #888;
             width: 40%;
-            border-radius: 5px;
         }
 
         .existing-request {
@@ -252,7 +262,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Dashboard</h1>
+        <h1 style="font-size: 50px;">User Portal Dashboard</h1>
         <div class="logout-button">
             <form action="/user/logout" method="GET">
                 <button type="submit">Logout</button>
@@ -292,6 +302,7 @@
                 {% endfor %}
             </div>
             <div class="right-panel">
+                <h1 style="text-align: center;">New Booking</h1>
                 <form action="/user/submit_request" method="POST">
                     <div class="form-group">
                         <label for="date">Date</label>
@@ -299,9 +310,9 @@
                     </div>
                     <div class="time-input-container">
                         <label for="start_time">Start Time</label>
-                        <input type="time" id="start_time" name="start_time" class="time-input" required>
+                        <input type="time" id="start_time" name="start_time" class="time-input" min="00:00" required>
                         <label for="end_time">End Time</label>
-                        <input type="time" id="end_time" name="end_time" class="time-input" required>
+                        <input type="time" id="end_time" name="end_time" class="time-input" min="00:00" required>
                     </div>
                     <div class="form-group">
                         <label for="block">Block</label>
