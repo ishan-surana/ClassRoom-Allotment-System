@@ -15,19 +15,19 @@
             box-sizing: border-box;
             margin: 0;
             flex-direction: column;
+            padding-top: 10px;
         }
 
         img {
             height: 40px;
             width: auto;
             margin: 0;
-            margin-right: 20px;
+            margin-bottom: 80px;
         }
 
         h1 {
             color: #f2f2f2;
             text-align: center;
-            margin-bottom: 20px;
         }
 
         p {
@@ -60,6 +60,20 @@
             background-color: #0056b3;
         }
 
+        .user:hover {
+            background-color: red;
+        }
+
+        .sw:hover {
+            background-color: lime;
+            color: black;
+        }
+
+        .so:hover {
+            background-color: yellow;
+            color: black;
+        }
+
         #main {
             border: 1px #f2f2f2 solid;
             display: flex;
@@ -68,6 +82,8 @@
             border-radius: 20px;
             box-shadow: 0 0 30px 5px #0056b3;
             transition: box-shadow 0.3s ease;
+            margin-bottom: 100px;
+            margin-top: 10px;
         }
 
         #main:hover {
@@ -89,8 +105,8 @@
     </style>
 </head>
 <body>
-        <img src="https://almashines.s3.dualstack.ap-southeast-1.amazonaws.com/assets/images/institutes/logo/170x170/947.jpg?v=1654254966">
-        <h1 style="font-size: 50px; margin-top: -40px;">Classroom Allotment System</h1>
+    <h1 style="font-size: 50px; margin-top: 40px;">Classroom Allotment System</h1>
+    <img src="https://almashines.s3.dualstack.ap-southeast-1.amazonaws.com/assets/images/institutes/logo/170x170/947.jpg?v=1654254966">
     <div id="main" class="shadow-on-hover">
         <div>
             <h1>Welcome to the Portal Selection Page</h1>
@@ -98,9 +114,9 @@
             <strong><u style="color: lightblue;"><p id="portal_name" style="color: lightblue;"></p></u></strong>
         </div>
         <form action="/redirect" method="post">
-            <button type="submit" name="portal" value="user" onmouseover="hovered('user')" onmouseout="notHovered('user')">User Portal</button>
-            <button type="submit" name="portal" value="sw" onmouseover="hovered('sw')" onmouseout="notHovered('sw')">SW Portal</button>
-            <button type="submit" name="portal" value="so" onmouseover="hovered('so')" onmouseout="notHovered('so')">SO Portal</button>
+            <button type="submit" name="portal" value="user" class="user" onmouseover="hovered('user')" onmouseout="notHovered('user')">User Portal</button>
+            <button type="submit" name="portal" value="sw" class="sw" onmouseover="hovered('sw')" onmouseout="notHovered('sw')">SW Portal</button>
+            <button type="submit" name="portal" value="so" class="so" onmouseover="hovered('so')" onmouseout="notHovered('so')">SO Portal</button>
         </form>
     </div>
 
