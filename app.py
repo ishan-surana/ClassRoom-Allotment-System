@@ -4,9 +4,11 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
+import base64
+#import maintainance
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app.secret_key = base64.urlsafe_b64encode(os.urandom(64)).decode('utf-8')
 
 user = Blueprint('user', __name__, template_folder='templates/user')
 sw = Blueprint('sw', __name__, template_folder='templates/sw')
@@ -36,7 +38,7 @@ def redirect_to_portal():
 
 @app.route('/approve_request/<int:request_id>', methods=['GET'])
 def approve_request(request_id):
-    conn = sqlite3.connect('classroom_allotment_system.db')
+    conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("UPDATE status SET fa_approved = 1 WHERE request_id = ?", (request_id,))
     conn.commit()
@@ -44,13 +46,23 @@ def approve_request(request_id):
     flash('Request approved successfully!', 'success')
     return render_template('approval_success.html', request_id=request_id)
 
-def send_email(to_email, request_id):
-    subject = "Approval Request for Request ID {}".format(request_id)
-    print(f"Email: {os.environ.get('CRAS_Email')}")
-    print(f"Pass: {os.environ.get('CRAS_App_Password_Google')}")
+def send_email(to_email, request_id, request):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT club_name FROM clubs where club_id=(SELECT club_id FROM requests WHERE request_id = ?);", (request_id, ))
+    club_name = cursor.fetchone()[0]
+    subject = "Approval Request from {} (Request ID {})".format(club_name, request_id)
     approval_url = url_for('approve_request', request_id=request_id, _external=True)
 
-    body = "Please click the following link to approve the request: {}".format(approval_url)
+    date = request.form['date']
+    start_time = request.form['start_time']
+    end_time = request.form['end_time']
+    block = request.form['block']
+    room = request.form['room']
+    reason = request.form['reason']
+    type_of_event = request.form['type_of_event']
+    remarks = request.form['remarks']
+    body = "Club {} has requested {} room {} on {} from {} to {}.\nReason:- {}\nType of event:- {}\nRemarks:- {}\n\nPlease click the following link to approve the request: {}".format(club_name, block, room, date, start_time, end_time, reason, type_of_event, remarks, approval_url)
     msg = MIMEMultipart()
     msg['From'] = os.environ.get('CRAS_Email')
     msg['To'] = to_email
@@ -67,7 +79,11 @@ def send_email(to_email, request_id):
 
 @app.route('/user/get_dashboard_data')
 def get_dashboard_data():
-    conn = sqlite3.connect('classroom_allotment_system.db')
+    if 'club_id' not in session:
+        print("hello")
+        return jsonify(message="Authentication required to access dashboard data")
+    
+    conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM status s JOIN requests r ON r.request_id = s.request_id AND club_id = ?", (session['club_id'], ))
     updated_data = cursor.fetchall()
@@ -83,7 +99,10 @@ def get_existing_requests():
     
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT distinct room_no FROM status JOIN requests WHERE room_block = ? AND date = ? AND ((? BETWEEN start_time AND end_time) OR (? BETWEEN start_time AND end_time) OR (start_time BETWEEN ? AND ?))", (block, date, start_time, end_time, start_time, end_time,))
+    cursor.execute("DROP view IF EXISTS v")
+    query = f"CREATE VIEW v AS SELECT * FROM status JOIN requests WHERE room_block = '{block}' AND date = '{date}' AND (('{start_time}' BETWEEN start_time AND end_time) OR ('{end_time}' BETWEEN start_time AND end_time) OR (start_time BETWEEN '{start_time}' AND '{end_time}'));"
+    cursor.execute(query)
+    cursor.execute("SELECT DISTINCT room_no FROM v")
     existing_requests = [row[0] for row in cursor.fetchall()]
     conn.close()
     return jsonify(existing_requests)
@@ -97,7 +116,10 @@ def get_ongoing_slots():
     
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT room_no FROM slots JOIN requests ON requests.request_id = slots.request_id WHERE room_block = ? AND date = ? AND ((? BETWEEN start_time AND end_time) OR (? BETWEEN start_time AND end_time) OR (start_time BETWEEN ? AND ?))", (block, date, start_time, end_time, start_time, end_time, ))
+    cursor.execute("DROP view IF EXISTS w")
+    query = f"CREATE VIEW w AS SELECT * FROM slots JOIN requests ON requests.request_id = slots.request_id WHERE room_block = '{block}' AND date = '{date}' AND (('{start_time}' BETWEEN start_time AND end_time) OR ('{end_time}' BETWEEN start_time AND end_time) OR (start_time BETWEEN '{start_time}' AND '{end_time}'));"
+    cursor.execute(query)
+    cursor.execute("SELECT DISTINCT room_no FROM w")
     ongoing_slots = [row[0] for row in cursor.fetchall()]
     conn.close()
     return jsonify(ongoing_slots)
@@ -105,8 +127,7 @@ def get_ongoing_slots():
 @app.route('/sw_approve')
 def sw_approve():
     request_id = int(request.args.get('request_id'))
-    print(request_id)
-    conn = sqlite3.connect('classroom_allotment_system.db')
+    conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("UPDATE status SET sw_approved = 1 WHERE request_id = ?",(request_id,))
     conn.commit()
@@ -116,8 +137,7 @@ def sw_approve():
 @app.route('/so_approve')
 def so_approve():
     request_id = int(request.args.get('request_id'))
-    print(request_id)
-    conn = sqlite3.connect('classroom_allotment_system.db')
+    conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("UPDATE status SET so_approved = 1 WHERE request_id = ?",(request_id,))
     cursor.execute("INSERT INTO slots values(?, 1)",(request_id,))
@@ -153,10 +173,10 @@ def login():
 def dashboard():
     if 'username' not in session:
         flash('You need to login first.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('user.index'))
 
     club_id = session['club_id']
-    conn = sqlite3.connect('classroom_allotment_system.db')
+    conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("SELECT r.request_id, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id WHERE r.club_id = ?", (club_id,))
     data = cursor.fetchall()
@@ -174,24 +194,21 @@ def submit_request():
         reason = request.form['reason']
         type_of_event = request.form['type_of_event']
         remarks = request.form['remarks']
-        print(request.form)
 
-        conn = sqlite3.connect('classroom_allotment_system.db')
+        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO requests (date, start_time, end_time, room_block, room_no, club_id, reason, type_of_event, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (date, start_time, end_time, block, room, session['club_id'], reason, type_of_event, remarks))
         
         # Retrieve request id
         cursor.execute("SELECT last_insert_rowid()")
         request_id = cursor.fetchone()[0]
-        print(request_id)
         cursor.execute("INSERT INTO status VALUES ((SELECT request_id FROM requests ORDER BY request_id DESC LIMIT 1), 0, 0, 0, True)")
         conn.commit()
         cursor.execute("SELECT fa_email FROM clubs WHERE club_id = ?", (session['club_id'],))
         fa_email = cursor.fetchone()[0]
-        print(fa_email)
         conn.close()
         
-        send_email(fa_email, request_id)
+        send_email(fa_email, request_id, request)
         return redirect(url_for('user.dashboard'))
 
 @user.route('/logout')
@@ -229,12 +246,10 @@ def dashboard():
         flash('You need to login first.', 'error')
         return redirect(url_for('sw.sw_index'))
 
-    club_id = session['club_id']
-    conn = sqlite3.connect('classroom_allotment_system.db')
+    conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("SELECT r.request_id, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id WHERE (fa_approved + sw_approved + so_approved)=1")
     data = cursor.fetchall()
-    print(data)
     conn.close()
     return render_template('sw_dashboard.html', data=data)
 
@@ -272,9 +287,8 @@ def dashboard():
     if 'username' not in session:
         flash('You need to login first.', 'error')
         return redirect(url_for('so.so_index'))
-
-    club_id = session['club_id']
-    conn = sqlite3.connect('classroom_allotment_system.db')
+    
+    conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("SELECT r.request_id, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id WHERE (fa_approved + sw_approved + so_approved)=2")
     data = cursor.fetchall()
@@ -292,4 +306,4 @@ app.register_blueprint(sw, url_prefix='/sw')
 app.register_blueprint(so, url_prefix='/so')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
