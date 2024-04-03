@@ -221,7 +221,7 @@
         }
 
         /* Dark mode specific styles */
-        .dark-mode .content, .dark-mode .request-item, .dark-mode .request-status-bar, .dark-mode .request-details, .dark-mode .modal-content {
+        .dark-mode .content, .dark-mode .request-item, .dark-mode .request-details {
             background-color: rgba(35, 35, 35);
             color: #fff;
             border-color: #555;
@@ -237,9 +237,12 @@
             background-color: rgb(25, 25, 25);
             color: #fff;
         }
+        .dark-mode .modal-content {
+            background-color: rgba(0, 0, 0, 0.85);
+        }
         
         /* Light mode specific styles */
-        .light-mode .header, .light-mode .content, .light-mode .panel, .light-mode .right-panel, .light-mode .request-item, .light-mode .request-status-bar, .light-mode #date, .light-mode .time-input-container label, .light-mode .time-input, .light-mode #block, .light-mode #reason, .light-mode #type_of_event, .light-mode #remarks, .light-mode .request-details, .light-mode .modal-content {
+        .light-mode .header, .light-mode .content, .light-mode .request-item, .light-mode .request-details {
             background-color: rgba(255, 255, 255);
             color: #000;
             border-color: #ccc;
@@ -255,6 +258,9 @@
         }
         .light-mode .stage.fa-approved, .light-mode .stage.sw-approved, .light-mode .stage.so-approved, .light-mode .stage.approved {
             background-color: rgb(0, 200, 7);
+        }
+        .light-mode .modal-content {
+            background-color: rgba(255, 255, 255, 0.85);
         }
 
         #forward {
