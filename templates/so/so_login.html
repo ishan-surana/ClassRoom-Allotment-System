@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SO Login</title>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,6 +16,7 @@
             align-items: center;
             height: 100vh;
         }
+        
         .login-container {
             background-color: #333; /* Dark container background color */
             border-radius: 8px;
@@ -24,20 +25,27 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 300px;
         }
+
         .login-container h2 {
             text-align: center;
             margin-bottom: 20px;
             color: #f2f2f2; /* Light text color */
         }
+
         .form-group {
             margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
+
         .form-group label {
             display: block;
             font-weight: bold;
             margin-bottom: 5px;
             color: #f2f2f2; /* Light text color */
         }
+
         .form-group input[type="text"],
         .form-group input[type="password"] {
             width: 100%;
@@ -47,8 +55,9 @@
             background-color: #444; /* Dark input background color */
             color: #f2f2f2; /* Light text color */
         }
+
         .form-group input[type="submit"] {
-            width: 100%;
+            width: 100px;
             padding: 10px;
             border-radius: 5px;
             border: none;
@@ -56,7 +65,10 @@
             color: #fff;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            margin: 0 auto;
+            display: block; /* Ensures block-level display */
         }
+
         .form-group input[type="submit"]:hover {
             background-color: #0056b3;
         }

@@ -4,19 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <style>
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            left: 40px;
+            z-index: 1000;
+        }
+
+        .dark-mode-toggle input {
+            display: none;
+        }
+
+        .dark-mode-toggle label {
+            display: inline-block;
+            width: 45px;
+            height: 20px;
+            background-color: grey;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .dark-mode-toggle label::after {
+            content: '';
+            width: 30px;
+            height: 30px;
+            background-color: white;
+            background-image: url('/static/sun.png');
+            background-size: cover;
+            border-radius: 50%;
+            position: absolute;
+            top: -4px;
+            left: -12px;
+            transition: 0.5s ease;
+        }
+
+        .dark-mode-toggle input:checked + label::after {
+            transform: translate(35px);
+            background-color: black;
+            background-image: url('/static/moon.png');
+            background-size: contain;
+            transition: ease 0.5s;
+        }
+
+        /* Common styles for both dark mode and light mode */
         body {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            background-color: #121212; /* Dark background color */
-            color: #fff; /* Light text color */
         }
 
         .header {
             background-color: transparent;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             top: 0;
             width: 100%;
             z-index: 1000;
@@ -27,7 +68,7 @@
             margin: 0;
             padding: 20px 0;
         }
-
+        
         .logout-button {
             position: absolute;
             top: 20px;
@@ -39,17 +80,17 @@
             border: none;
             border-radius: 5px;
             background-color: #dc3545;
+            margin-top: 0px;
             color: #fff;
             font-size: 16px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: 0.3s ease;
         }
 
         .logout-button button:hover {
-            background-color: #c82333;
-            box-shadow: 0 0 25px 8px red;
-            transition: background-color 0.3s ease;
-            transition: box-shadow 1s ease;
+            background-color: red;
+            box-shadow: 0px 0px 20px 5px red;
+            transition: ease 0.5s;
         }
 
         .content {
@@ -57,9 +98,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #121212; /* Dark background color */
-            color: #fff; /* Light text color */
+            height: max-content;
+            background-color: #f2f2f2;
+            padding-top: 20px;
         }
 
         .dashboard-container {
@@ -70,15 +111,32 @@
             background-color: transparent;
         }
 
-    .left-panel, .right-panel {
-        flex: 1;
-        padding: 20px;
-        border-radius: 20px;
-        overflow: hidden;
-        background-color: #333;
-        margin: 30px;
-        box-shadow: 0px 0px 12px 12px rgba(255, 255, 255, 1); /* White glow effect */
-    }
+        .left-panel {
+            flex: 1;
+            padding: 20px;
+            border-radius: 20px;
+            border-right: 3px solid #ccc;
+            overflow: hidden;
+            background-color: #fff;
+            margin: 20px;
+            margin-right: 25px;
+        }
+
+        .right-panel {
+            flex: 1;
+            padding: 20px;
+            border-radius: 20px;
+            border-right: 3px solid #ccc;
+            overflow: hidden;
+            background-color: #fff;
+            margin: 20px;
+            margin-left: 25px;
+        }
+        
+        .right-panel button {
+            display: block;
+            margin: 30px auto;
+        }
 
         .request-item {
             padding-top: 10px;
@@ -86,41 +144,28 @@
             padding-left: 10px;
             margin-bottom: 20px;
             border-radius: 5px;
-            border: 1px solid #555; /* Dark border color */
         }
 
         .request-item:hover {
-            border: 1px solid #fff; /* Light border color */
+            border: 1px solid black;
         }
 
         .request-status-bar {
             display: flex;
             align-items: center;
             height: 20px;
-            border: 1px solid #555; /* Dark border color */
+            border: 1px solid #ccc;
             margin-bottom: 5px;
         }
 
         .stage {
             flex: 1;
             height: 100%;
-            border-right: 1px solid #fff; /* Light border color */
+            border-right: 1px solid white;
             background-color: black;
         }
 
-        .stage.fa-approved {
-            background-color: lime;
-        }
-
-        .stage.sw-approved {
-            background-color: lime;
-        }
-
-        .stage.so-approved {
-            background-color: lime;
-        }
-
-        .stage.approved {
+        .stage.fa-approved, .stage.sw-approved, .stage.so-approved, .stage.approved {
             background-color: lime;
         }
 
@@ -128,25 +173,20 @@
             background-color: black;
         }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
-
         .form-group label {
             font-weight: bold;
             margin-bottom: 5px;
             display: block;
-            color: #fff; /* Light text color */
+            margin-top: 10px;
+            margin-bottom: 10px;
         }
 
         .form-group select {
             width: 100%;
             padding: 10px;
             border-radius: 5px;
-            border: 1px solid #555; /* Dark border color */
+            border: 1px solid #ccc;
             font-size: 16px;
-            background-color: #333; /* Dark container background color */
-            color: #fff; /* Light text color */
         }
 
         .form-group textarea, input {
@@ -154,11 +194,10 @@
             font-size: medium;
             padding: 2px;
             border-radius: 5px;
-            border: 1px solid #555; /* Dark border color */
-            background-color: #333; /* Dark container background color */
-            color: #fff; /* Light text color */
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
         }
-        
+
         .time-input-container {
             display: flex;
             justify-content: space-between;
@@ -167,22 +206,25 @@
             margin-top: 30px;
         }
 
+        #end-time {
+            padding-right: 0;
+        }
+
         .time-input-container label {
             font-weight: bold;
             margin-bottom: 5px;
             display: block;
             margin-right: -10px;
-            color: #fff; /* Light text color */
         }
 
         .time-input {
             width: calc(45% - 5px);
             display: inline-block;
             margin-right: 30px;
-            border-radius: 5px;
-            border: 1px solid #555; /* Dark border color */
-            background-color: #333; /* Dark container background color */
-            color: #fff; /* Light text color */
+        }
+        
+        #date {
+            height: 25px;
         }
 
         .room-grid {
@@ -194,7 +236,7 @@
         .room-square {
             width: 30px;
             height: 30px;
-            border: 1px solid #555; /* Dark border color */
+            border: 1px solid #ccc;
             cursor: pointer;
             transition: background-color 0.3s ease;
             display: inline-block;
@@ -203,12 +245,13 @@
         .room-square.selected {
             background-color: #007bff;
         }
-
+        
         button {
             padding: 10px 20px;
             border: none;
             border-radius: 5px;
             background-color: #007bff;
+            margin-top: 30px;
             color: #fff;
             font-size: 16px;
             cursor: pointer;
@@ -217,6 +260,11 @@
 
         button:hover {
             background-color: #0056b3;
+        }
+
+        #block {
+            margin-bottom: 20px;
+            width: 97.5%;
         }
 
         .request-details {
@@ -238,32 +286,89 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0,0,0,0.4);
         }
 
         .modal-content {
-            background-color: #333; /* Dark background color */
-            color: #fff; /* Light text color */
+            background-color: #fefefe;
             padding: 20px;
-            border-radius: 5px;
             border: 1px solid #888;
             width: 40%;
+            border-radius: 5px;
         }
 
         .existing-request {
             background-color: #d3d3d3;
             pointer-events: none;
         }
-
+        
         .ongoing-slot {
             background-color: #ff6961;
             pointer-events: none;
         }
+        
+        /* Dark mode specific styles */
+        .dark-mode .content, .dark-mode .request-status-bar,.dark-mode .request-details, .dark-mode .modal-content {
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            border-color: #555;
+        }
+        .dark-mode .time-input::-webkit-calendar-picker-indicator, #date::-webkit-calendar-picker-indicator {
+            filter: invert(100%) sepia(0%) saturate(6356%) hue-rotate(276deg) brightness(142%) contrast(123%);;
+        }
+        .dark-mode .left-panel, .dark-mode .right-panel {
+            background-color: #121212;
+            color: #fff;
+            border-color: #555;
+            box-shadow: 0px 0px 12px 12px rgba(255, 255, 255, 1);  /* White glow effect */
+        }
+        .dark-mode .request-item, .dark-mode #date, .dark-mode .time-input, .dark-mode #block, .dark-mode #reason, .dark-mode #type_of_event, .dark-mode #remarks {
+            background-color: rgba(33, 33, 33);
+            color: #fff;
+            border-color: #555;
+        }
+        .dark-mode .header {
+            background-color: rgb(25, 25, 25);
+            color: #fff;
+        }
+        .dark-mode .content {
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            border-color: #555;
+        }
+        
+        /* Light mode specific styles */
+        .light-mode .header, .light-mode .content, .light-mode .left-panel, .light-mode .right-panel, .light-mode .request-item, .light-mode .request-status-bar, .light-mode #date, .light-mode .time-input-container label, .light-mode .time-input, .light-mode #block, .light-mode #reason, .light-mode #type_of_event, .light-mode #remarks, .light-mode .request-details, .light-mode .modal-content {
+            background-color: rgba(255, 255, 255);
+            color: #000;
+            border-color: #ccc;
+        }
+        .light-mode.modal {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+        .light-mode .time-input::-webkit-calendar-picker-indicator, #date::-webkit-calendar-picker-indicator {
+            filter: invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(0%);;
+        }
+        .light-mode .left-panel, .light-mode .right-panel {
+            background-color: white;
+            color: black;
+            border-color: #555;
+            box-shadow: 0px 0px 12px 14px rgba(0, 0, 0, 1); /* White glow effect */
+        }
+        .light-mode .request-item, .light-mode .content, .light-mode #date, .light-mode .time-input, .light-mode #block, .light-mode #reason, .light-mode #type_of_event, .light-mode #remarks {
+            background-color: rgb(235, 235, 235);
+        }
+        .light-mode .stage.fa-approved, .light-mode .stage.sw-approved, .light-mode .stage.so-approved, .light-mode .stage.approved {
+            background-color: rgb(0, 200, 7);
+        }
     </style>
 </head>
-<body>
+<body class="dark-mode">
+    <div class="dark-mode-toggle">
+        <input type="checkbox" id="darkModeToggle">
+        <label for="darkModeToggle"></label>
+    </div>
     <div class="header">
-        <h1 style="font-size: 50px;">User Portal Dashboard</h1>
+        <h1>User Portal Dashboard</h1>
         <div class="logout-button">
             <form action="/user/logout" method="GET">
                 <button type="submit">Logout</button>
@@ -297,7 +402,7 @@
                             <p><strong>Reason:</strong> {{ row[7] }}</p>
                             <p><strong>Type of Event:</strong> {{ row[8] }}</p>
                             <p><strong>Remarks:</strong> {{ row[9] }}</p>
-                            <button onclick="closeModal('{{ row[0] }}')">Close</button>
+                            <button style="display: block; margin: 0 auto;" onclick="closeModal('{{ row[0] }}')">Close</button>
                         </div>
                     </div>
                 {% endfor %}
@@ -355,6 +460,14 @@
         </div>
     </div>
     <script>
+        document.getElementById('darkModeToggle').addEventListener('change', function() {
+        if (this.checked) {
+            document.body.classList.add('light-mode');
+        } else {
+            document.body.classList.remove('light-mode');
+        }
+    });
+
         function openModal(requestId) {
             const modal = document.getElementById('modal' + requestId);
             modal.style.display = 'flex';

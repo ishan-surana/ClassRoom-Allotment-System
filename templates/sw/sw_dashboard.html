@@ -4,19 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SW Dashboard</title>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <style>
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            left: 40px;
+            z-index: 1000;
+        }
+
+        .dark-mode-toggle input {
+            display: none;
+        }
+
+        .dark-mode-toggle label {
+            display: inline-block;
+            width: 45px;
+            height: 20px;
+            background-color: grey;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .dark-mode-toggle label::after {
+            content: '';
+            width: 30px;
+            height: 30px;
+            background-color: white;
+            background-image: url('/static/sun.png');
+            background-size: cover;
+            border-radius: 50%;
+            position: absolute;
+            top: -4px;
+            left: -12px;
+            transition: 0.5s ease;
+        }
+        
+        .dark-mode-toggle input:checked + label::after {
+            transform: translate(35px);
+            background-color: black;
+            background-image: url('/static/moon.png');
+            background-size: contain;
+            transition: ease 0.5s;
+        }
+
+        /* Common styles for both dark mode and light mode */
         body {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            background-color: #121212; /* Dark background color */
-            color: #fff; /* Light text color */
+            min-height: 100vh;
         }
 
         .header {
             background-color: transparent;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 1);
             top: 0;
             width: 100%;
             z-index: 1000;
@@ -39,17 +82,17 @@
             border: none;
             border-radius: 5px;
             background-color: #dc3545;
+            margin-top: 0px;
             color: #fff;
             font-size: 16px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: 0.3s ease;
         }
 
         .logout-button button:hover {
-            background-color: #c82333;
-            box-shadow: 0 0 25px 8px red;
-            transition: background-color 0.3s ease;
-            transition: box-shadow 1s ease;
+            background-color: red;
+            box-shadow: 0px 0px 20px 5px red;
+            transition: ease 0.5s;
         }
 
         .content {
@@ -57,9 +100,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #121212; /* Dark background color */
-            color: #fff; /* Light text color */
+            min-height: 100vh;
+            background-color: #f2f2f2;
         }
 
         .dashboard-container {
@@ -75,7 +117,7 @@
             padding: 20px;
             border-radius: 20px;
             overflow: hidden;
-            background-color: #333;
+            background-color: #fff;
             margin: 30px;
             box-shadow: 0px 0px 12px 12px rgba(255, 255, 255, 1);
         }
@@ -86,46 +128,57 @@
             padding-left: 10px;
             margin-bottom: 20px;
             border-radius: 5px;
-            border: 1px solid #555; /* Dark border color */
         }
 
         .request-item:hover {
-            border: 1px solid #fff; /* Light border color */
+            border: 1px solid black;
         }
 
         .request-status-bar {
             display: flex;
             align-items: center;
             height: 20px;
-            border: 1px solid #555; /* Dark border color */
+            border: 1px solid #ccc;
             margin-bottom: 5px;
         }
 
         .stage {
             flex: 1;
             height: 100%;
-            border-right: 1px solid #fff; /* Light border color */
+            border-right: 1px solid white;
             background-color: black;
         }
 
-        .stage.fa-approved {
-            background-color: lime;
-        }
-
-        .stage.sw-approved {
-            background-color: lime;
-        }
-
-        .stage.so-approved {
-            background-color: lime;
-        }
-
-        .stage.approved {
+        .stage.fa-approved, .stage.sw-approved, .stage.so-approved, .stage.approved {
             background-color: lime;
         }
 
         .stage.black {
             background-color: black;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            margin-top: 30px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
         }
 
         .request-details {
@@ -147,23 +200,61 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-            flex-direction: column;
         }
 
         .modal-content {
-            background-color: #333; /* Dark background color */
-            color: #fff; /* Light text color */
+            background-color: #fefefe;
             padding: 20px;
-            border-radius: 5px;
             border: 1px solid #888;
             width: 40%;
+            border-radius: 5px;
         }
 
-        .modal-content h2 {
-            text-align: center; /* Center the text */
-            margin-top: 0; /* Remove default margin */
-            margin-bottom: 20px; /* Add some margin at the bottom */
+        .existing-request {
+            background-color: #d3d3d3;
+            pointer-events: none;
+        }
+        
+        .ongoing-slot {
+            background-color: #ff6961;
+            pointer-events: none;
+        }
+
+        /* Dark mode specific styles */
+        .dark-mode .content, .dark-mode .request-item, .dark-mode .request-status-bar, .dark-mode .request-details, .dark-mode .modal-content {
+            background-color: rgba(35, 35, 35);
+            color: #fff;
+            border-color: #555;
+        }
+        .dark-mode .panel {
+            background-color: #121212;
+            color: #fff;
+            border-color: #555;
+            border-radius: 20px;
+            box-shadow: 0px 0px 12px 12px rgba(255, 255, 255, 1); /* White glow effect */
+        }
+        .dark-mode .header {
+            background-color: rgb(25, 25, 25);
+            color: #fff;
+        }
+        
+        /* Light mode specific styles */
+        .light-mode .header, .light-mode .content, .light-mode .panel, .light-mode .right-panel, .light-mode .request-item, .light-mode .request-status-bar, .light-mode #date, .light-mode .time-input-container label, .light-mode .time-input, .light-mode #block, .light-mode #reason, .light-mode #type_of_event, .light-mode #remarks, .light-mode .request-details, .light-mode .modal-content {
+            background-color: rgba(255, 255, 255);
+            color: #000;
+            border-color: #ccc;
+        }
+        .light-mode .panel {
+            background-color: white;
+            color: black;
+            border-color: #555;
+            box-shadow: 0px 0px 15px 14px rgba(0, 0, 0, 1); /* White glow effect */
+        }
+        .light-mode .request-item, .light-mode .content {
+            background-color: rgb(235, 235, 235);
+        }
+        .light-mode .stage.fa-approved, .light-mode .stage.sw-approved, .light-mode .stage.so-approved, .light-mode .stage.approved {
+            background-color: rgb(0, 200, 7);
         }
 
         #forward {
@@ -172,16 +263,19 @@
         }
 
         #reject {
-            background-color: red;
+            background-color: #dc3545;
         }
-
+        
         #forward:hover {
-            background-color: mediumseagreen;
-            color: white;
+            background-color: rgb(0, 255, 115);
+            box-shadow: 0px 0px 20px 5px mediumspringgreen;
+            transition: ease 0.4s;
         }
 
         #reject:hover {
-            background-color: darkred;
+            background-color: red;
+            box-shadow: 0px 0px 20px 5px red;
+            transition: ease 0.4s;
         }
 
         .button-container {
@@ -212,9 +306,13 @@
         }
     </style>
 </head>
-<body>
+<body class="dark-mode">
+    <div class="dark-mode-toggle">
+        <input type="checkbox" id="darkModeToggle">
+        <label for="darkModeToggle"></label>
+    </div>
     <div class="header">
-        <h1 style="font-size: 50px;">Student Welfare Dashboard</h1>
+        <h1>Student Welfare Dashboard</h1>
             <div class="logout-button">
                 <form action="/sw/logout" method="GET">
                     <button type="submit">Logout</button>
@@ -261,6 +359,14 @@
         </div>
     </div>
     <script>
+        document.getElementById('darkModeToggle').addEventListener('change', function() {
+        if (this.checked) {
+            document.body.classList.add('light-mode');
+        } else {
+            document.body.classList.remove('light-mode');
+        }
+        });
+
         function openModal(requestId) {
             const modal = document.getElementById('modal' + requestId);
             modal.style.display = 'flex';
