@@ -480,6 +480,15 @@
             modal.style.display = 'none';
         }
 
+        document.addEventListener('DOMContentLoaded', function () {
+            var dateInput = document.getElementById('date');
+            var today = new Date();
+            var twoDaysAfterToday = new Date(today);
+            twoDaysAfterToday.setDate(twoDaysAfterToday.getDate() + 2);
+            var minDate = twoDaysAfterToday.toLocaleDateString().split('/').reverse().join('-')
+            dateInput.min = minDate;
+        });
+
         const blockDropdown = document.getElementById('block');
         const roomContainer = document.getElementById('room-matrix');
         const dateValue = document.getElementById('date');
