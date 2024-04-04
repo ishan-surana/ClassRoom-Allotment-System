@@ -14,12 +14,18 @@ app.secret_key = base64.urlsafe_b64encode(os.urandom(64)).decode('utf-8')
 user = Blueprint('user', __name__, template_folder='templates/user')
 sw = Blueprint('sw', __name__, template_folder='templates/sw')
 so = Blueprint('so', __name__, template_folder='templates/so')
+admin = Blueprint('admin', __name__, template_folder='templates/admin')
 
 def connect_db():
     return sqlite3.connect('classroom_allotment_system.db')
 
 def is_logged_in():
     return 'club_id' in session
+
+@app.before_request
+def set_server_name():
+    if request:
+        app.config['SERVER_NAME'] = request.host.replace('admin.','',-1)
 
 @app.route('/')
 def index():
@@ -53,8 +59,7 @@ def reject_request():
     request_id = int(request.args.get('request_id'))
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM status WHERE request_id = ?",(request_id,))
-    cursor.execute("DELETE FROM requests WHERE request_id = ?",(request_id,))
+    cursor.execute("UPDATE status SET ongoing = 0 WHERE request_id = ?", (request_id,))
     conn.commit()
     conn.close()
     flash('Request approved successfully!', 'success')
@@ -174,7 +179,7 @@ def get_existing_requests():
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("DROP view IF EXISTS v")
-    query = f"CREATE VIEW v AS SELECT * FROM status JOIN requests WHERE room_block = '{block}' AND date = '{date}' AND (('{start_time}' BETWEEN start_time AND end_time) OR ('{end_time}' BETWEEN start_time AND end_time) OR (start_time BETWEEN '{start_time}' AND '{end_time}'));"
+    query = f"CREATE VIEW v AS SELECT * FROM status JOIN requests ON status.request_id = requests.request_id WHERE ongoing = 1 AND room_block = '{block}' AND date = '{date}' AND (('{start_time}' BETWEEN start_time AND end_time) OR ('{end_time}' BETWEEN start_time AND end_time) OR (start_time BETWEEN '{start_time}' AND '{end_time}'));"
     cursor.execute(query)
     cursor.execute("SELECT DISTINCT room_no FROM v")
     existing_requests = [row[0] for row in cursor.fetchall()]
@@ -213,7 +218,7 @@ def so_approve():
     request_id = int(request.args.get('request_id'))
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("UPDATE status SET so_approved = 1 WHERE request_id = ?",(request_id,))
+    cursor.execute("UPDATE status SET so_approved = 1, ongoing = 0 WHERE request_id = ?",(request_id,))
     cursor.execute("INSERT INTO slots values(?, 1)",(request_id,))
     conn.commit()
     conn.close()
@@ -264,25 +269,26 @@ def submit_request():
         start_time = request.form['start_time']
         end_time = request.form['end_time']
         block = request.form['block']
-        room = request.form['room']
+        rooms = request.form.getlist('selected_rooms[]')
+        print(rooms)
         reason = request.form['reason']
         type_of_event = request.form['type_of_event']
         remarks = request.form['remarks']
 
-        conn = connect_db()
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO requests (date, start_time, end_time, room_block, room_no, club_id, reason, type_of_event, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (date, start_time, end_time, block, room, session['club_id'], reason, type_of_event, remarks))
-        
-        # Retrieve request id
-        cursor.execute("SELECT last_insert_rowid()")
-        request_id = cursor.fetchone()[0]
-        cursor.execute("INSERT INTO status VALUES ((SELECT request_id FROM requests ORDER BY request_id DESC LIMIT 1), 0, 0, 0, True)")
-        conn.commit()
-        cursor.execute("SELECT fa_email FROM clubs WHERE club_id = ?", (session['club_id'],))
-        fa_email = cursor.fetchone()[0]
-        conn.close()
-        
-        send_email(fa_email, request_id, request)
+        for room in rooms:
+            conn = connect_db()
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO requests (date, start_time, end_time, room_block, room_no, club_id, reason, type_of_event, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (date, start_time, end_time, block, room, session['club_id'], reason, type_of_event, remarks))
+            # Retrieve request id
+            cursor.execute("SELECT last_insert_rowid()")
+            request_id = cursor.fetchone()[0]
+            cursor.execute("INSERT INTO status VALUES ((SELECT request_id FROM requests ORDER BY request_id DESC LIMIT 1), 0, 0, 0, True)")
+            conn.commit()
+            cursor.execute("SELECT fa_email FROM clubs WHERE club_id = ?", (session['club_id'],))
+            fa_email = cursor.fetchone()[0]
+            conn.close()
+            send_email(fa_email, request_id, request)
+
         return redirect(url_for('user.dashboard'))
 
 @user.route('/logout')
@@ -322,7 +328,7 @@ def dashboard():
 
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT r.request_id, club_name, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id JOIN clubs c ON r.club_id = c.club_id WHERE (fa_approved + sw_approved + so_approved)=1")
+    cursor.execute("SELECT r.request_id, club_name, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id JOIN clubs c ON r.club_id = c.club_id WHERE (fa_approved + sw_approved + so_approved)=1 AND ongoing=1")
     data = cursor.fetchall()
     conn.close()
     return render_template('sw_dashboard.html', data=data)
@@ -364,7 +370,7 @@ def dashboard():
     
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT r.request_id, club_name, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id JOIN clubs c ON r.club_id = c.club_id WHERE (fa_approved + sw_approved + so_approved)=2")
+    cursor.execute("SELECT r.request_id, club_name, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id JOIN clubs c ON r.club_id = c.club_id WHERE (fa_approved + sw_approved + so_approved)=2 and ongoing=1")
     data = cursor.fetchall()
     conn.close()
     return render_template('so_dashboard.html', data=data)
@@ -375,9 +381,49 @@ def logout():
     flash('You have been logged out.', 'success')
     return redirect(url_for('so.so_index'))
 
+@admin.route('/')
+def admin_index():
+    return render_template('admin_index.html')
+
+@admin.route('/admin_login', methods=['GET', 'POST'])
+def admin_login():
+    return render_template('admin_login.html')
+
+@admin.route('/login', methods=['POST'])
+def login():
+    admin_username = request.form['admin_username']
+    print('USER: '+admin_username)
+    admin_password = request.form['admin_password']
+    if admin_username=="admin" and admin_password=="admin":
+        session['admin_username'] = admin_username
+        flash('Login successful!', 'success')
+        return redirect(url_for('admin.dashboard'))
+    else:
+        return "Invalid"
+
+@admin.route('/dashboard', methods=['GET'])
+def dashboard():
+    if 'admin_username' not in session:
+        flash('You need to login first.', 'error')
+        return redirect(url_for('admin.admin_index'))
+    
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT r.request_id, club_name, r.date, r.start_time, r.end_time, r.room_block, r.room_no, r.club_id, r.reason, r.type_of_event, r.remarks, s.fa_approved, s.sw_approved, s.so_approved, s.ongoing FROM requests r LEFT JOIN status s ON r.request_id = s.request_id JOIN clubs c ON r.club_id = c.club_id")
+    data = cursor.fetchall()
+    conn.close()
+    return render_template('admin_dashboard.html', data=data)
+
+@admin.route('/logout')
+def logout():
+    session.pop('admin_username', None)
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('admin.admin_login'))
+
 app.register_blueprint(user, url_prefix='/user')
 app.register_blueprint(sw, url_prefix='/sw')
 app.register_blueprint(so, url_prefix='/so')
+app.register_blueprint(admin, subdomain='admin')
 
 if __name__ == '__main__':
     app.run(debug=True, port=80)

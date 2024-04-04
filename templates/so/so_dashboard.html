@@ -157,6 +157,10 @@
             background-color: black;
         }
 
+        .stage.red {
+            background-color: red;
+        }
+
         .form-group label {
             font-weight: bold;
             margin-bottom: 5px;
@@ -336,8 +340,10 @@
                             <div class="stage {% if row[-4] == 1 %} fa-approved {% else %} black {% endif %}"></div>
                             <div class="stage {% if row[-3] == 1 %} sw-approved {% else %} black {% endif %}"></div>
                             <div class="stage {% if row[-2] == 1 %} so-approved {% else %} black {% endif %}"></div>
-                        {% else %}
-                            <div class="stage {% if row[-4] == 1 %} approved {% else %} black {% endif %}"></div>
+                            {% else %}
+                            <div class="stage {% if row[-4] == 1 %} fa-approved {% else %} red {% endif %}"></div>
+                            <div class="stage {% if row[-3] == 1 %} sw-approved {% else %} red {% endif %}"></div>
+                            <div class="stage {% if row[-2] == 1 %} so-approved {% else %} red {% endif %}"></div>
                         {% endif %}
                     </div>
                     <p>Request id: {{ row[0] }}</p>
@@ -399,7 +405,7 @@
         async function so_approve(requestId) {
             const response = await fetch(`/so_approve?request_id=${requestId}`);
             console.log('Status updated successfully');
-            location.reload();
+            window.location.reload();
         }
     });
 
@@ -416,7 +422,7 @@
         async function reject_request(requestId) {
             const response = await fetch(`/reject_request?request_id=${requestId}`);
             console.log('Status updated successfully');
-            location.reload();
+            window.location.reload();
         }
     });
     </script>

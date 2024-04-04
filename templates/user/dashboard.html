@@ -173,6 +173,10 @@
             background-color: black;
         }
 
+        .stage.red {
+            background-color: red;
+        }
+
         .form-group label {
             font-weight: bold;
             margin-bottom: 5px;
@@ -387,7 +391,9 @@
                                 <div class="stage {% if row[-3] == 1 %} sw-approved {% else %} black {% endif %}"></div>
                                 <div class="stage {% if row[-2] == 1 %} so-approved {% else %} black {% endif %}"></div>
                             {% else %}
-                                <div class="stage {% if row[-4] == 1 %} approved {% else %} black {% endif %}"></div>
+                            <div class="stage {% if row[-4] == 1 %} fa-approved {% else %} red {% endif %}"></div>
+                            <div class="stage {% if row[-3] == 1 %} sw-approved {% else %} red {% endif %}"></div>
+                            <div class="stage {% if row[-2] == 1 %} so-approved {% else %} red {% endif %}"></div>
                             {% endif %}
                         </div>
                         <p>Request id: {{ row[0] }}</p>
@@ -461,12 +467,12 @@
     </div>
     <script>
         document.getElementById('darkModeToggle').addEventListener('change', function() {
-        if (this.checked) {
-            document.body.classList.add('light-mode');
-        } else {
-            document.body.classList.remove('light-mode');
-        }
-    });
+            if (this.checked) {
+                document.body.classList.add('light-mode');
+            } else {
+                document.body.classList.remove('light-mode');
+            }
+        });
 
         function openModal(requestId) {
             const modal = document.getElementById('modal' + requestId);
@@ -496,7 +502,7 @@
         const endValue = document.getElementById('end_time');
 
         if (blockDropdown.value !== "") {
-                roomContainer.style.display = ''; 
+            roomContainer.style.display = ''; 
         }
 
 async function updateRoomColors() {
@@ -524,33 +530,55 @@ async function updateRoomColors() {
         });
     }
 
-    const roomSquares = document.querySelectorAll('.room-square');
-        roomSquares.forEach(square => {
-            square.addEventListener('click', () => {
-                roomSquares.forEach(square => {
-                    square.classList.remove('selected');
-                });
-                square.classList.add('selected');
-                const row = square.dataset.row;
-                const col = square.dataset.col;
-                document.getElementById('selected_room').value = `${row}0${col}`;
-            });
-        });
+// Replace the existing room selection logic with the following:
+const selectedRooms = []; // Array to store selected rooms
+const roomSquares = document.querySelectorAll('.room-square');
+roomSquares.forEach(square => {
+    square.addEventListener('click', () => {
+        square.classList.toggle('selected'); // Toggle selected class
 
-    const selectedRoomInput = document.getElementById('selected_room');
-        document.addEventListener('DOMContentLoaded', function () {
-        const selectedRoomInput = document.getElementById('selected_room');
-        document.getElementById('request').addEventListener('click', function(event) {
-        const form = document.querySelector('form');
-        if (!selectedRoomInput.value) {
-                event.preventDefault(); // Prevent form submission if room is not selected
-                alert('Please select a room before submitting the form.');
-                console.log('testing');
-            } else {
-                form.submit(); // Submit the form if room is selected
+        const row = square.dataset.row;
+        const col = square.dataset.col;
+        const roomId = `${row}0${col}`;
+
+        // If room is selected, add it to the array; otherwise, remove it
+        if (selectedRooms.includes(roomId)) {
+            const index = selectedRooms.indexOf(roomId);
+            if (index > -1) {
+                selectedRooms.splice(index, 1);
             }
-        });
+        } else {
+            selectedRooms.push(roomId);
+        }
     });
+});
+
+// Update the form submission logic to handle multiple selected rooms
+document.getElementById('request').addEventListener('click', function(event) {
+    const form = document.querySelector('form');
+
+    // Check if at least one room is selected
+    if (selectedRooms.length === 0) {
+        event.preventDefault(); // Prevent form submission if no room is selected
+        alert('Please select at least one room before submitting the form.');
+    } else {
+        const form = event.target;
+        // Clear any existing hidden inputs for selected rooms
+        const existingSelectedRoomInputs = form.querySelectorAll('input[name="selected_rooms[]"]');
+        existingSelectedRoomInputs.forEach(input => input.remove());
+
+        // Add the selected rooms to the form data
+        selectedRooms.forEach(room => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'selected_rooms[]'; // Use array notation to send multiple values with the same name
+            input.value = room;
+            form.appendChild(input);
+        });
+        
+        form.submit(); // Submit the form with selected rooms
+    }
+});
 
     blockDropdown.addEventListener('change', async () => {
         if (blockDropdown.value !== "") {
@@ -558,7 +586,8 @@ async function updateRoomColors() {
         } else {
             roomContainer.style.display = 'none';
         }
-
+        selectedRooms.length = 0;
+        clearRoomColors();
         await updateRoomColors();
     });
 
@@ -612,14 +641,24 @@ async function fetchAndUpdateData() {
                 requestStatusBarContainer.innerHTML = '';
                 const requestStatusBar = document.createElement('div');
                 requestStatusBar.classList.add('request-status-bar');
-
-                if (faApproved) requestStatusBar.innerHTML += '<div class="stage fa-approved"></div>';
-                else requestStatusBar.innerHTML += '<div class="stage"></div>';
-                if (swApproved) requestStatusBar.innerHTML += '<div class="stage sw-approved"></div>';
-                else requestStatusBar.innerHTML += '<div class="stage"></div>';
-                if (soApproved) requestStatusBar.innerHTML += '<div class="stage so-approved"></div>'; 
-                else requestStatusBar.innerHTML += '<div class="stage"></div>';
                 
+                if(ongoing) {
+                    if (faApproved) requestStatusBar.innerHTML += '<div class="stage fa-approved"></div>';
+                    else requestStatusBar.innerHTML += '<div class="stage"></div>';
+                    if (swApproved) requestStatusBar.innerHTML += '<div class="stage sw-approved"></div>';
+                    else requestStatusBar.innerHTML += '<div class="stage"></div>';
+                    if (soApproved) requestStatusBar.innerHTML += '<div class="stage so-approved"></div>'; 
+                    else requestStatusBar.innerHTML += '<div class="stage"></div>';
+                }
+                else {
+                    if (faApproved) requestStatusBar.innerHTML += '<div class="stage fa-approved"></div>';
+                    else requestStatusBar.innerHTML += '<div class="stage red"></div>';
+                    if (swApproved) requestStatusBar.innerHTML += '<div class="stage sw-approved"></div>';
+                    else requestStatusBar.innerHTML += '<div class="stage red"></div>';
+                    if (soApproved) requestStatusBar.innerHTML += '<div class="stage so-approved"></div>'; 
+                    else requestStatusBar.innerHTML += '<div class="stage red"></div>';
+                }
+
                 const requestIdElement = document.createElement('p');
                 requestIdElement.textContent = `Request id: ${requestId}`;
                 requestStatusBarContainer.appendChild(requestStatusBar);
