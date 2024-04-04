@@ -3,6 +3,7 @@ import sqlite3
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 import os
 import base64
 #import maintainance
@@ -76,16 +77,76 @@ def send_email(to_email, request_id, request):
     reason = request.form['reason']
     type_of_event = request.form['type_of_event']
     remarks = request.form['remarks']
-    body = "Club {} has requested {} room {} on {} from {} to {}.\nReason:- {}\nType of event:- {}\nRemarks:- {}\n\nPlease click the following link to APPROVE the request: {}\nor the following to REJECT the request: {}".format(club_name, block, room, date, start_time, end_time, reason, type_of_event, remarks, approval_url, rejection_url)
+    body = f"""
+    <html>
+        <head>
+            <style>
+                .container {{ 
+                    position: relative;
+                    padding: 20px;
+                    background-color: #202020;
+                    color: white;
+                    border-radius: 10px;
+                }}
+                .title-container {{ 
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                }}
+                .title {{ 
+                    color: white;
+                    padding-left: 25%;
+                    padding-right: 25%;
+                }}
+                .icon {{ 
+                    width: 50px;
+                    height: 50px;
+                }}
+    
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="title-container">
+                    <h2 class="title">Approval Request from {club_name} (Request ID {request_id})</h2>
+                    <img src="cid:favicon" class="icon">
+                </div>
+                <div style="padding: 10px; background-color: #303030; color: white; border: 1px solid #ccc; border-radius: 5px;">
+                    <p><strong>Date:</strong> {date}</p>
+                    <p><strong>Start Time:</strong> {start_time}</p>
+                    <p><strong>End Time:</strong> {end_time}</p>
+                    <p><strong>Block:</strong> {block}</p>
+                    <p><strong>Room:</strong> {room}</p>
+                    <p><strong>Reason:</strong> {reason}</p>
+                    <p><strong>Type of Event:</strong> {type_of_event}</p>
+                    <p><strong>Remarks:</strong> {remarks}</p>
+                </div>
+                <div style="margin-top: 20px; margin-left: 35%">
+                    <form action="{approval_url}" method="get" style="display: inline; margin-right: 15%">
+                        <a href="{approval_url}" type="submit" class="forward" style="padding: 10px 20px; border: none; border-radius: 5px; background-color: mediumspringgreen; color: #000; cursor: pointer; margin-right: 10px;">Approve</a>
+                    </form>
+                    <form action="{rejection_url}" method="get" style="display: inline;">
+                        <a href="{rejection_url}" type="submit" class="reject" style="padding: 10px 20px; border: none; border-radius: 5px; background-color: #dc3545; color: #fff; cursor: pointer;">Reject</a>
+                    </form>
+                </div>
+            </div>
+        </body>
+    </html>
+	"""
     msg = MIMEMultipart()
     msg['From'] = os.environ.get('CRAS_Email')
     msg['To'] = to_email
     msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
-
+    msg.attach(MIMEText(body, 'html'))
+    # Attach the favicon image
+    with open('static/favicon.ico', 'rb') as file:
+        image = MIMEImage(file.read())
+        image.add_header('Content-ID', '<favicon>')
+        msg.attach(image)
     smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
     smtp_server.starttls()
-    smtp_server.login(os.environ.get('CRAS_Email'),os.environ.get('CRAS_App_Password_Google'))
+    smtp_server.login(os.environ.get('CRAS_Email'), os.environ.get('CRAS_App_Password_Google'))
     text = msg.as_string()
     smtp_server.sendmail(os.environ.get('CRAS_Email'), to_email, text)
     smtp_server.quit()
