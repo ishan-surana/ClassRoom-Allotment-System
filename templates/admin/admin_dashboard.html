@@ -324,7 +324,7 @@
     <div class="header">
         <h1>Student Welfare Dashboard</h1>
             <div class="logout-button">
-                <form action="/logout" method="GET">
+                <form action="{{ url_for('admin.logout') }}" method="GET">
                     <button type="submit">Logout</button>
                 </form>
             </div>
@@ -395,13 +395,13 @@
             forwardButtons.forEach(function(forwardButton) {
                 forwardButton.addEventListener('click', function(event) {
                     const requestId = event.currentTarget.closest('.modal').id.substring(5);
-                    sw_approve(requestId);
+                    admin_approve(requestId);
                     closeModal(requestId);
                     window.location.reload();
                 });
             });
-            async function sw_approve(requestId) {
-                const response = await fetch(`/sw_approve?request_id=${requestId}`);
+            async function admin_approve(requestId) {
+                const response = await fetch(`/admin_approve?request_id=${requestId}`);
                 console.log('Status updated successfully');
                 window.location.reload();
             }
@@ -412,13 +412,13 @@
             rejectButtons.forEach(function(rejectButton) {
                 rejectButton.addEventListener('click', function(event) {
                     const requestId = event.currentTarget.closest('.modal').id.substring(5);
-                    reject_request(requestId);
+                    admin_reject(requestId);
                     closeModal(requestId);
                     window.location.reload();
                 });
             });
-            async function reject_request(requestId) {
-                const response = await fetch(`/reject_request?request_id=${requestId}`);
+            async function admin_reject(requestId) {
+                const response = await fetch(`/admin_reject?request_id=${requestId}`);
                 console.log('Status updated successfully');
                 window.location.reload();
             }

@@ -224,6 +224,28 @@ def so_approve():
     conn.close()
     return jsonify({'success': True, 'message': 'Status updated successfully'})
 
+@app.route('/admin_approve')
+def admin_approve():
+    request_id = int(request.args.get('request_id'))
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE status SET fa_approved = 1, sw_approved = 1, so_approved = 1, ongoing = 0 WHERE request_id = ?",(request_id,))
+    cursor.execute("INSERT INTO slots values(?, 1)",(request_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': 'Status updated successfully'})
+
+@app.route('/admin_reject')
+def admin_reject():
+    request_id = int(request.args.get('request_id'))
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE status SET fa_approved = 0, sw_approved = 0, so_approved = 0, ongoing = 0 WHERE request_id = ?",(request_id,))
+    cursor.execute("DELETE FROM slots WHERE request_id = ?",(request_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': 'Status updated successfully'})
+
 @user.route('/')
 def index():
     return render_template('login.html')
@@ -385,12 +407,12 @@ def logout():
 def admin_index():
     return render_template('admin_index.html')
 
-@admin.route('/admin_login', methods=['GET', 'POST'])
-def admin_login():
+@admin.route('/login', methods=['GET', 'POST'])
+def login():
     return render_template('admin_login.html')
 
-@admin.route('/login', methods=['POST'])
-def login():
+@admin.route('/admin_login', methods=['POST'])
+def admin_login():
     admin_username = request.form['admin_username']
     print('USER: '+admin_username)
     admin_password = request.form['admin_password']
@@ -418,12 +440,12 @@ def dashboard():
 def logout():
     session.pop('admin_username', None)
     flash('You have been logged out.', 'success')
-    return redirect(url_for('admin.admin_login'))
+    return redirect(url_for('admin.login'))
 
 app.register_blueprint(user, url_prefix='/user')
 app.register_blueprint(sw, url_prefix='/sw')
 app.register_blueprint(so, url_prefix='/so')
-app.register_blueprint(admin, subdomain='admin')
+app.register_blueprint(admin, url_prefix='/admin')
 
 if __name__ == '__main__':
     app.run(debug=True, port=80)

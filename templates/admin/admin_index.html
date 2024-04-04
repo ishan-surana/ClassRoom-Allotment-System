@@ -93,7 +93,7 @@
         <div>
             <h1>Welcome to the Admin Portal Page</h1>
             <p>Press the login button and enter admin credentials.</p>
-            <form action="{{ url_for('admin.admin_login') }}" method="post">
+            <form action="{{ url_for('admin.login') }}" method="post">
                 <button type="submit" name="portal" value="admin" class="admin" onmouseover="hovered('admin')" onmouseout="notHovered('admin')">Login</button>
             </form>
         </div>
