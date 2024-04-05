@@ -22,6 +22,7 @@ def connect_db():
 def is_logged_in():
     return 'club_id' in session
 
+'''
 ALLOWED_HOSTS = ['classroom-allotment-system.onrender.com', 'classroom-allotment-system.vercel.app','127.0.0.1','localhost']
 @app.before_request
 def set_server_name():
@@ -30,6 +31,7 @@ def set_server_name():
         if host in ALLOWED_HOSTS:
             app.config['SERVER_NAME'] = host
             print(host)
+'''
 
 @app.route('/')
 def index():
