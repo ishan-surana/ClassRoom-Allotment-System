@@ -397,13 +397,13 @@
                     const requestId = event.currentTarget.closest('.modal').id.substring(5);
                     admin_approve(requestId);
                     closeModal(requestId);
-                    window.location.reload();
+                    location.reload(true);
                 });
             });
             async function admin_approve(requestId) {
                 const response = await fetch(`/admin_approve?request_id=${requestId}`);
                 console.log('Status updated successfully');
-                window.location.reload();
+                location.reload(true);
             }
         });
 
@@ -414,13 +414,13 @@
                     const requestId = event.currentTarget.closest('.modal').id.substring(5);
                     admin_reject(requestId);
                     closeModal(requestId);
-                    window.location.reload();
+                    location.reload(true);
                 });
             });
             async function admin_reject(requestId) {
                 const response = await fetch(`/admin_reject?request_id=${requestId}`);
                 console.log('Status updated successfully');
-                window.location.reload();
+                location.reload(true);
             }
         });
     </script>

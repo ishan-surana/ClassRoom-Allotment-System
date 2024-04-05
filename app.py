@@ -22,10 +22,14 @@ def connect_db():
 def is_logged_in():
     return 'club_id' in session
 
+ALLOWED_HOSTS = ['classroom-allotment-system.onrender.com', 'classroom-allotment-system.vercel.app','127.0.0.1','localhost']
 @app.before_request
 def set_server_name():
     if request:
-        app.config['SERVER_NAME'] = request.host.replace('admin.','',-1)
+        host = request.host.replace('admin','',-1)
+        if host in ALLOWED_HOSTS:
+            app.config['SERVER_NAME'] = host
+            print(host)
 
 @app.route('/')
 def index():
@@ -226,11 +230,12 @@ def so_approve():
 
 @app.route('/admin_approve')
 def admin_approve():
+    print(dir(request))
     request_id = int(request.args.get('request_id'))
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("UPDATE status SET fa_approved = 1, sw_approved = 1, so_approved = 1, ongoing = 0 WHERE request_id = ?",(request_id,))
-    cursor.execute("INSERT INTO slots values(?, 1)",(request_id,))
+    cursor.execute("INSERT INTO slots SELECT ?, 1 WHERE NOT EXISTS (SELECT 1 FROM slots WHERE request_id = ?)",(request_id, request_id,))
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'message': 'Status updated successfully'})
