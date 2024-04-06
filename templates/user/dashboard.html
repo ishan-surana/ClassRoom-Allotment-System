@@ -466,6 +466,10 @@
         </div>
     </div>
     <script>
+        var today = new Date();
+        var twoDaysAfterToday = new Date(today);
+        twoDaysAfterToday.setDate(twoDaysAfterToday.getDate() + 2);
+        var minDate = twoDaysAfterToday.toLocaleDateString().split('/').reverse().join('-')
         document.getElementById('darkModeToggle').addEventListener('change', function() {
             if (this.checked) {
                 document.body.classList.add('light-mode');
@@ -488,10 +492,6 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             var dateInput = document.getElementById('date');
-            var today = new Date();
-            var twoDaysAfterToday = new Date(today);
-            twoDaysAfterToday.setDate(twoDaysAfterToday.getDate() + 2);
-            var minDate = twoDaysAfterToday.toLocaleDateString().split('/').reverse().join('-')
             dateInput.min = minDate;
         });
 
@@ -531,7 +531,7 @@ async function updateRoomColors() {
     }
 
 // Replace the existing room selection logic with the following:
-const selectedRooms = []; // Array to store selected rooms
+var selectedRooms = []; // Array to store selected rooms
 const roomSquares = document.querySelectorAll('.room-square');
 roomSquares.forEach(square => {
     square.addEventListener('click', () => {
@@ -540,7 +540,7 @@ roomSquares.forEach(square => {
         const row = square.dataset.row;
         const col = square.dataset.col;
         const roomId = `${row}0${col}`;
-
+        
         // If room is selected, add it to the array; otherwise, remove it
         if (selectedRooms.includes(roomId)) {
             const index = selectedRooms.indexOf(roomId);
@@ -557,16 +557,24 @@ roomSquares.forEach(square => {
 document.getElementById('request').addEventListener('click', function(event) {
     const form = document.querySelector('form');
 
+    if (startValue.value >= endValue.value) {
+        event.preventDefault();
+        alert('The value of start time should be lesser than or equal to end time!');
+    }
+    if (dateValue.value <= minDate) {
+        event.preventDefault();
+        alert('Request can be booked only for dates on or after ' + minDate + '!');
+    }
     // Check if at least one room is selected
     if (selectedRooms.length === 0) {
         event.preventDefault(); // Prevent form submission if no room is selected
-        alert('Please select at least one room before submitting the form.');
+        alert('Please select at least one room before submitting the form!');
     } else {
         const form = event.target;
         // Clear any existing hidden inputs for selected rooms
         const existingSelectedRoomInputs = form.querySelectorAll('input[name="selected_rooms[]"]');
         existingSelectedRoomInputs.forEach(input => input.remove());
-
+        selectedRooms = []
         // Add the selected rooms to the form data
         selectedRooms.forEach(room => {
             const input = document.createElement('input');
@@ -589,22 +597,27 @@ document.getElementById('request').addEventListener('click', function(event) {
         selectedRooms.length = 0;
         clearRoomColors();
         await updateRoomColors();
+        selectedRooms = []
     });
 
     blockDropdown.addEventListener('change', async () => {
         await updateRoomColors();
+        selectedRooms = []
     });
 
     dateValue.addEventListener('change', async () => {
         await updateRoomColors();
+        selectedRooms = []
     });
 
     startValue.addEventListener('change', async () => {
         await updateRoomColors();
+        selectedRooms = []
     });
 
     endValue.addEventListener('change', async () => {
         await updateRoomColors();
+        selectedRooms = []
     });
 
     function clearRoomColors() {
