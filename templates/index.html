@@ -6,33 +6,50 @@
     <title>Portal Selection</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <style>
+        .header {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            background-color: #fefefe;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px; /* Add padding here */
+        }
+
+
         body {
             font-family: Arial, sans-serif;
-            background-color: rgba(0,0,0,0.9);
+            background-image: url("../static/mu-acadamic-lp1.png");
+            background-repeat: no-repeat;
+            background-size: cover;
             display: flex;
             justify-content: space-evenly;
             align-items: center;
-            height: 90vh;
+            height: 100vh;
             box-sizing: border-box;
             margin: 0;
             flex-direction: column;
-            padding-top: 10px;
+            padding-top: 0;
         }
 
         img {
-            height: 40px;
+            height: 2.5rem;
             width: auto;
             margin: 0;
-            margin-bottom: 80px;
+            /* margin-bottom: 80px; */
         }
 
         h1 {
-            color: #f2f2f2;
+            color: black;
             text-align: center;
         }
 
         p {
-            color: #f2f2f2;
+            color: black;
             text-align: center;
             margin-bottom: 20px;
         }
@@ -57,7 +74,7 @@
             width: 130px;
         }
 
-        button:hover {
+        /* button:hover {
             background-color: #0056b3;
         }
 
@@ -73,9 +90,10 @@
         .so:hover {
             background-color: yellow;
             color: black;
-        }
+        } */
 
         #main {
+            background-color: white;
             border: 1px #f2f2f2 solid;
             display: flex;
             padding: 30px;
@@ -87,7 +105,7 @@
             margin-top: 10px;
         }
 
-        #main:hover {
+        /* #main:hover {
             box-shadow: 0 0 50px 15px white;
         }
 
@@ -101,18 +119,22 @@
 
         #main.shadow-on-hover.hovered-so {
             box-shadow: 0 0 50px 15px yellow;
-        }
+        } */
 
     </style>
 </head>
 <body>
-    <h1 style="font-size: 50px; margin-top: 40px;">Classroom Allotment System</h1>
-    <img src="https://almashines.s3.dualstack.ap-southeast-1.amazonaws.com/assets/images/institutes/logo/170x170/947.jpg?v=1654254966">
+    <div class="header">
+        <div class="header-container">
+            <h1 style="font-size: 50px;">Classroom Allotment System</h1>
+            <img src="https://almashines.s3.dualstack.ap-southeast-1.amazonaws.com/assets/images/institutes/logo/170x170/947.jpg?v=1654254966">
+        </div>
+    </div>
     <div id="main" class="shadow-on-hover">
         <div>
             <h1>Welcome to the Portal Selection Page</h1>
             <p>Please choose which portal you want to access:</p>
-            <strong><u style="color: lightblue;"><p id="portal_name" style="color: lightblue;"></p></u></strong>
+            <strong><u style="color: darkblue;"><p id="portal_name" style="color: darkblue;"></p></u></strong>
         </div>
         <form action="/redirect" method="post">
             <button type="submit" name="portal" value="user" class="user" onmouseover="hovered('user')" onmouseout="notHovered('user')">User Portal</button>
