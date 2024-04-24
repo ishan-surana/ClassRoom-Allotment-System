@@ -96,6 +96,40 @@ def create_tables():
     c.execute('ALTER TABLE status_new RENAME TO status;')
     c.execute('ALTER TABLE slots_new RENAME TO slots;')
 
+    c.execute('''CREATE TABLE IF NOT EXISTS deleted_requests (
+        request_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+        date DATE NOT NULL,
+        start_time TIME NOT NULL,
+        end_time TIME NOT NULL,
+        room_block VARCHAR(10) NOT NULL,
+        room_no VARCHAR(10) NOT NULL,
+        club_id INTEGER NOT NULL,
+        reason VARCHAR(100),
+        type_of_event VARCHAR(100),
+        remarks VARCHAR(1000),
+        FOREIGN KEY (club_id) REFERENCES clubs(club_id)
+    )''')
+
+    c.execute('''CREATE TRIGGER IF NOT EXISTS t1
+        AFTER DELETE ON requests
+        FOR EACH ROW
+        BEGIN
+        INSERT INTO deleted_requests 
+        VALUES (
+        OLD.request_id,
+        OLD.date,
+        OLD.start_time,
+        OLD.end_time,
+        OLD.room_block,
+        OLD.room_no,
+        OLD.club_id,
+        OLD.reason,
+        OLD.type_of_event,
+        OLD.remarks
+        );
+        END;
+    ''')
+
     conn.commit()
     conn.close()
 

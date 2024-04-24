@@ -31,8 +31,8 @@
             content: '';
             width: 30px;
             height: 30px;
-            background-color: white;
-            background-image: url('/static/sun.png');
+            background-color: black;
+            background-image: url('/static/moon.png');
             background-size: cover;
             border-radius: 50%;
             position: absolute;
@@ -43,8 +43,8 @@
         
         .dark-mode-toggle input:checked + label::after {
             transform: translate(35px);
-            background-color: black;
-            background-image: url('/static/moon.png');
+            background-color: white;
+            background-image: url('/static/sun.png');
             background-size: contain;
             transition: ease 0.5s;
         }
@@ -101,7 +101,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f2f2f2;
+            background-color: rgb(255, 170, 67);
         }
 
         .dashboard-container {
@@ -120,6 +120,19 @@
             background-color: #fff;
             margin: 30px;
             box-shadow: 0px 0px 12px 12px rgba(255, 255, 255, 1);
+        }
+        
+        .panel-title {
+            min-width: 100%;
+            background-color: #714315;
+            color: white;
+            text-align: center;
+            padding: 5px;
+            margin-bottom: 2%;
+            border-radius: 10px;
+            margin-top: -20px;
+            margin-left: -20px;
+            margin-right: -25px;
         }
 
         .request-item {
@@ -235,7 +248,7 @@
             color: #fff;
             border-color: #555;
             border-radius: 20px;
-            box-shadow: 0px 0px 12px 12px rgba(255, 255, 255, 1); /* White glow effect */
+            box-shadow: 6px 7px 5px 2px rgb(255, 255, 255); /* White glow effect */
         }
         .dark-mode .header {
             background-color: rgb(25, 25, 25);
@@ -244,9 +257,12 @@
         .dark-mode .modal-content {
             background-color: rgba(0, 0, 0, 0.85);
         }
+        .dark-mode .panel-title {
+            background-color: rgb(35, 35, 35);
+        }
         
         /* Light mode specific styles */
-        .light-mode .header, .light-mode .content, .light-mode .request-item, .light-mode .request-details {
+        .light-mode .header, .light-mode .request-item, .light-mode .request-details {
             background-color: rgba(255, 255, 255);
             color: #000;
             border-color: #ccc;
@@ -255,9 +271,9 @@
             background-color: white;
             color: black;
             border-color: #555;
-            box-shadow: 0px 0px 15px 14px rgba(0, 0, 0, 1); /* White glow effect */
+            box-shadow: 8px 6px 12px 2px rgba(0, 0, 0, 1); /* White glow effect */
         }
-        .light-mode .request-item, .light-mode .content {
+        .light-mode .request-item {
             background-color: rgb(235, 235, 235);
         }
         .light-mode .stage.fa-approved, .light-mode .stage.sw-approved, .light-mode .stage.so-approved, .light-mode .stage.approved {
@@ -316,7 +332,7 @@
         }
     </style>
 </head>
-<body class="dark-mode">
+<body class="light-mode">
     <div class="dark-mode-toggle">
         <input type="checkbox" id="darkModeToggle">
         <label for="darkModeToggle"></label>
@@ -332,7 +348,7 @@
     <div class="content">
     <div class="dashboard-container">
         <div class="panel" id="panel">
-            <u><h1 style="text-align: center;">Requests status</u>:-</h1>
+            <div class="panel-title"><u><h1 style="text-align: center;">Requests status</u>:-</h1></div>
             {% for row in data %}
                 <div class="request-item" onclick="openModal('{{ row[0] }}')">
                     <div class="request-status-bar">
@@ -372,11 +388,13 @@
     </div>
     <script>
         document.getElementById('darkModeToggle').addEventListener('change', function() {
-        if (this.checked) {
-            document.body.classList.add('light-mode');
-        } else {
-            document.body.classList.remove('light-mode');
-        }
+            if (this.checked) {
+                document.body.classList.add('dark-mode');
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.add('light-mode');
+                document.body.classList.remove('dark-mode');
+            }
         });
         
         function openModal(requestId) {
