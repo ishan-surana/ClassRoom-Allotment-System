@@ -274,7 +274,7 @@ def login():
         flash('Login successful!', 'success')
         return redirect(url_for('user.dashboard'))
     else:
-        flash('Invalid username or password. Please try again.', 'error')
+        flash('Invalid credentials! Please try again.', 'error')
         return redirect(url_for('user.index'))
 
 @user.route('/dashboard')
@@ -455,4 +455,4 @@ app.register_blueprint(so, url_prefix='/so')
 app.register_blueprint(admin, url_prefix='/admin')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=80)
+    app.run(port=80)

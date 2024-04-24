@@ -69,4 +69,6 @@ body {
 
 .flash-error {
     color: red;
+    text-align: center;
+    margin-left:17px;
 }
