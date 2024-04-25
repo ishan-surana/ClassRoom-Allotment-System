@@ -6,7 +6,7 @@ The database used here is **SQLITE3** due to its flexibility and ease of usage.
 
 The main deployment of the app is [here](https://classroom-allotment-system.onrender.com).
 
-This work is licensed under **CC BY-NC-ND 4.0**. Please refer the licence for more details regarding freedom of use.
+This work is licensed under [**CC BY-NC-ND 4.0**](LICENSE.md). Please refer the license for more details regarding freedom of use.
 
 ## Directory structure and Project files
 - [app.py](app.py):- The backend, which handles authentication, queries to the database and all the routes of the app, is an app made using the Flask framework in Python3.
